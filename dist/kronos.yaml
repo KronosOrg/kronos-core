@@ -521,8 +521,6 @@ spec:
           capabilities:
             drop:
             - ALL
-      imagePullSecrets:
-      - name: <registry-secret>
       securityContext:
         runAsNonRoot: true
       serviceAccountName: kronos-controller-manager

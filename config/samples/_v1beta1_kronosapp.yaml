@@ -1,46 +1,16 @@
-apiVersion: core.wecraft.tn/v1beta1
+apiVersion: core.wecraft.tn/v1alpha1
 kind: KronosApp
 metadata:
   labels:
-    app.kubernetes.io/name: kronosapp
-    app.kubernetes.io/instance: kronosapp-sample
-    app.kubernetes.io/part-of: Kronos-Core
-    app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/created-by: Kronos-Core
-  name: kronosapp-sample
+  name: sleep-at-weekend
 spec:
-  #Using a 24h format
-  startSleep: "13:02"
-  endSleep: "22:41"
-  #Using ISO8601 For Days of the Week Numbers
-  weekdays: "2-5..7"
-  #Using IANA Timezone Database 
+  startSleep: "18:00"
+  endSleep: "07:00"
+  weekdays: "1..5"
   timezone: "Africa/Tunis"
-  #Using ISO8601 For Day Representation YYYY-MM-DD
-  holidays:
-    - name: "My Own Vacation"
-      date: "2024-04-18/20/21"
-    - name: "Labour Day"
-      date: "2024-05-01"
-    - name: "Women Day"
-      date: "2024-04-24"
   includedObjects: 
     - apiVersion: "apps/v1"
       kind: "Deployment"
-      namespace: "default"
-  #Define Included Objects Name
-  #If not defined, it will be set to include everything
-      includeRef: ""
-  #Define Excluded Objects Name
-  #If not defined, it will be set to exclude nothing
-      excludeRef: ""
-    - apiVersion: "batch/v1"
-      kind: "CronJob"
-      namespace: "default"
-      includeRef: ""
-      excludeRef: ""
-    - apiVersion: "apps/v1"
-      kind: "StatefulSet"
       namespace: "default"
       includeRef: ""
       excludeRef: ""
