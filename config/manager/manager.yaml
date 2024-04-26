@@ -98,7 +98,5 @@ spec:
           requests:
             cpu: 10m
             memory: 64Mi
-      imagePullSecrets:
-        - name: <registry-secret>
       serviceAccountName: controller-manager
       terminationGracePeriodSeconds: 10
