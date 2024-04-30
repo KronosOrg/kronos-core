@@ -28,14 +28,26 @@ func (objectList *ObjectList) GetObjectsNames() map[string][]string {
 
 func (objectList *ObjectList) GetObjectsCount() map[string]int {
 	objectCount := make(map[string]int)
-	objectCount["Deployments"] = len(objectList.Deployments.Items)
-	objectCount["StatefulSets"] = len(objectList.StatefulSets.Items)
-	objectCount["CronJobs"] = len(objectList.CronJobs.Items)
+	if objectList.Deployments != nil {
+		objectCount["Deployments"] = len(objectList.Deployments.Items)
+	} else if objectList.StatefulSets != nil {
+		objectCount["StatefulSets"] = len(objectList.StatefulSets.Items)
+	} else if objectList.CronJobs != nil {
+		objectCount["CronJobs"] = len(objectList.CronJobs.Items)
+	}
 	return objectCount
 }
 
 func (objectList *ObjectList) GetObjectsTotalCount() int {
-	return len(objectList.Deployments.Items) + len(objectList.StatefulSets.Items) + len(objectList.CronJobs.Items)
+	var count int
+	if objectList.Deployments != nil {
+		count += len(objectList.Deployments.Items)
+	} else if objectList.StatefulSets != nil {
+		count += len(objectList.StatefulSets.Items)
+	} else if objectList.CronJobs != nil {
+		count += len(objectList.CronJobs.Items)
+	}
+	return count
 }
 
 type APIVersionKindMap struct {
@@ -301,126 +313,132 @@ func putIncludedObjectsToSleep(ctx context.Context, Client client.Client, secret
 	replicaResourceMap := object.NewReplicaResourceMap()
 	statusResourceMap := object.NewStatusResourceMap()
 
-	var savedResources []object.ResourceInt
-	var sleptResourcesToSave []object.ResourceInt
 	var err error
-	dataExists := CheckIfSecretContainsDataOfKind(secret, "Deployment")
-	if dataExists {
-		savedResources, err = getSecretDatas(secret, "Deployment")
-		if err != nil {
-			return nil, err
+	if includedObjects.Deployments != nil {
+		var savedResources []object.ResourceInt
+		var sleptResourcesToSave []object.ResourceInt
+		dataExists := CheckIfSecretContainsDataOfKind(secret, "Deployment")
+		if dataExists {
+			savedResources, err = getSecretDatas(secret, "Deployment")
+			if err != nil {
+				return nil, err
+			}
 		}
-	}
-	for _, item := range includedObjects.Deployments.Items {
-		objectExists := false
-		index := 0
+		for _, item := range includedObjects.Deployments.Items {
+			objectExists := false
+			index := 0
+			if len(savedResources) != 0 {
+				index, objectExists = checkOccurenceInSavedData(savedResources, item.Name, item.Namespace)
+			}
+
+			if !objectExists {
+				deployment := object.NewReplicaResource(item.Kind, item.Name, item.Namespace, *item.Spec.Replicas)
+				deployment.AddToList(replicaResourceMap)
+				deployment.PutToSleep(ctx, Client)
+			} else {
+				sleptResourcesToSave = append(sleptResourcesToSave, savedResources[index])
+				savedResources = removeElementFromArray(savedResources, index)
+			}
+		}
+
 		if len(savedResources) != 0 {
-			index, objectExists = checkOccurenceInSavedData(savedResources, item.Name, item.Namespace)
+			for _, resource := range savedResources {
+				resource.Wake(ctx, Client)
+			}
 		}
 
-		if !objectExists {
-			deployment := object.NewReplicaResource(item.Kind, item.Name, item.Namespace, *item.Spec.Replicas)
-			deployment.AddToList(replicaResourceMap)
-			deployment.PutToSleep(ctx, Client)
-		} else {
-			sleptResourcesToSave = append(sleptResourcesToSave, savedResources[index])
-			savedResources = removeElementFromArray(savedResources, index)
-		}
-	}
+		deploymentList := object.CastReplicaToGeneral(replicaResourceMap.Items["Deployment"])
+		deploymentList = append(deploymentList, sleptResourcesToSave...)
 
-	if len(savedResources) != 0 {
-		for _, resource := range savedResources {
-			resource.Wake(ctx, Client)
-		}
-	}
-
-	deploymentList := object.CastReplicaToGeneral(replicaResourceMap.Items["Deployment"])
-	deploymentList = append(deploymentList, sleptResourcesToSave...)
-
-	err = WriteChanges(ctx, Client, secret, deploymentList, "Deployment", failedObjects, failedObjectsSleepActions)
-	if err != nil {
-		return nil, err
-	}
-
-	savedResources = []object.ResourceInt{}
-	sleptResourcesToSave = []object.ResourceInt{}
-
-	dataExists = CheckIfSecretContainsDataOfKind(secret, "StatefulSet")
-	if dataExists {
-		savedResources, err = getSecretDatas(secret, "StatefulSet")
+		err = WriteChanges(ctx, Client, secret, deploymentList, "Deployment", failedObjects, failedObjectsSleepActions)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	for _, item := range includedObjects.StatefulSets.Items {
-		objectExists := false
-		index := 0
+	if includedObjects.StatefulSets != nil {
+		savedResources := []object.ResourceInt{}
+		sleptResourcesToSave := []object.ResourceInt{}
+
+		dataExists := CheckIfSecretContainsDataOfKind(secret, "StatefulSet")
+		if dataExists {
+			savedResources, err = getSecretDatas(secret, "StatefulSet")
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		for _, item := range includedObjects.StatefulSets.Items {
+			objectExists := false
+			index := 0
+			if len(savedResources) != 0 {
+				index, objectExists = checkOccurenceInSavedData(savedResources, item.Name, item.Namespace)
+			}
+
+			if !objectExists {
+				statefulset := object.NewReplicaResource(item.Kind, item.Name, item.Namespace, *item.Spec.Replicas)
+				statefulset.AddToList(replicaResourceMap)
+				statefulset.PutToSleep(ctx, Client)
+			} else {
+				sleptResourcesToSave = append(sleptResourcesToSave, savedResources[index])
+				savedResources = removeElementFromArray(savedResources, index)
+			}
+		}
 		if len(savedResources) != 0 {
-			index, objectExists = checkOccurenceInSavedData(savedResources, item.Name, item.Namespace)
+			for _, resource := range savedResources {
+				resource.Wake(ctx, Client)
+			}
 		}
 
-		if !objectExists {
-			statefulset := object.NewReplicaResource(item.Kind, item.Name, item.Namespace, *item.Spec.Replicas)
-			statefulset.AddToList(replicaResourceMap)
-			statefulset.PutToSleep(ctx, Client)
-		} else {
-			sleptResourcesToSave = append(sleptResourcesToSave, savedResources[index])
-			savedResources = removeElementFromArray(savedResources, index)
-		}
-	}
-	if len(savedResources) != 0 {
-		for _, resource := range savedResources {
-			resource.Wake(ctx, Client)
-		}
-	}
+		statefulsetList := object.CastReplicaToGeneral(replicaResourceMap.Items["StatefulSet"])
+		statefulsetList = append(statefulsetList, sleptResourcesToSave...)
 
-	statefulsetList := object.CastReplicaToGeneral(replicaResourceMap.Items["StatefulSet"])
-	statefulsetList = append(statefulsetList, sleptResourcesToSave...)
-
-	err = WriteChanges(ctx, Client, secret, statefulsetList, "StatefulSet", failedObjects, failedObjectsSleepActions)
-	if err != nil {
-		return nil, err
-	}
-
-	savedResources = []object.ResourceInt{}
-	sleptResourcesToSave = []object.ResourceInt{}
-
-	dataExists = CheckIfSecretContainsDataOfKind(secret, "CronJob")
-	if dataExists {
-		savedResources, err = getSecretDatas(secret, "CronJob")
+		err = WriteChanges(ctx, Client, secret, statefulsetList, "StatefulSet", failedObjects, failedObjectsSleepActions)
 		if err != nil {
 			return nil, err
 		}
 	}
-	for _, item := range includedObjects.CronJobs.Items {
-		objectExists := false
-		index := 0
+
+	if includedObjects.CronJobs != nil {
+		savedResources := []object.ResourceInt{}
+		sleptResourcesToSave := []object.ResourceInt{}
+
+		dataExists := CheckIfSecretContainsDataOfKind(secret, "CronJob")
+		if dataExists {
+			savedResources, err = getSecretDatas(secret, "CronJob")
+			if err != nil {
+				return nil, err
+			}
+		}
+		for _, item := range includedObjects.CronJobs.Items {
+			objectExists := false
+			index := 0
+			if len(savedResources) != 0 {
+				index, objectExists = checkOccurenceInSavedData(savedResources, item.Name, item.Namespace)
+			}
+
+			if !objectExists {
+				cronjob := object.NewStatusResource(item.Kind, item.Name, item.Namespace, *item.Spec.Suspend)
+				cronjob.AddToList(statusResourceMap)
+				cronjob.PutToSleep(ctx, Client)
+			} else {
+				sleptResourcesToSave = append(sleptResourcesToSave, savedResources[index])
+				savedResources = removeElementFromArray(savedResources, index)
+			}
+		}
 		if len(savedResources) != 0 {
-			index, objectExists = checkOccurenceInSavedData(savedResources, item.Name, item.Namespace)
+			for _, resource := range savedResources {
+				resource.Wake(ctx, Client)
+			}
 		}
 
-		if !objectExists {
-			cronjob := object.NewStatusResource(item.Kind, item.Name, item.Namespace, *item.Spec.Suspend)
-			cronjob.AddToList(statusResourceMap)
-			cronjob.PutToSleep(ctx, Client)
-		} else {
-			sleptResourcesToSave = append(sleptResourcesToSave, savedResources[index])
-			savedResources = removeElementFromArray(savedResources, index)
-		}
-	}
-	if len(savedResources) != 0 {
-		for _, resource := range savedResources {
-			resource.Wake(ctx, Client)
-		}
-	}
+		cronjobList := object.CastStatusToGeneral(statusResourceMap.Items["CronJob"])
+		cronjobList = append(cronjobList, sleptResourcesToSave...)
 
-	cronjobList := object.CastStatusToGeneral(statusResourceMap.Items["CronJob"])
-	cronjobList = append(cronjobList, sleptResourcesToSave...)
-
-	err = WriteChanges(ctx, Client, secret, cronjobList, "CronJob", failedObjects, failedObjectsSleepActions)
-	if err != nil {
-		return nil, err
+		err = WriteChanges(ctx, Client, secret, cronjobList, "CronJob", failedObjects, failedObjectsSleepActions)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return failedObjectsSleepActions, nil

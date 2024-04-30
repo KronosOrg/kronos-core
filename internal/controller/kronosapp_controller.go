@@ -18,12 +18,13 @@ package kronosapp
 
 import (
 	"context"
+	"time"
+
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"time"
 
 	"gitlab.infra.wecraft.tn/wecraft/automation/ifra/kronos/api/v1alpha1"
 )

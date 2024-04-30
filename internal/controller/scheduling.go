@@ -96,9 +96,19 @@ func (s Set) Contains(element string) bool {
 	return exists
 }
 
+func (s Set) getAllDays() Set {
+	for i := 1; i <= 7; i++ {
+		s[fmt.Sprintf("%d", i)] = struct{}{}
+	}
+	return s
+}
+
 func extractWeekdays(weekdays string) Set {
-	weekdaysList := strings.Split(weekdays, "-")
 	weekdaysSet := make(Set)
+	if weekdays == "*" {
+		return weekdaysSet.getAllDays()
+	}
+	weekdaysList := strings.Split(weekdays, "-")
 	for _, item := range weekdaysList {
 		if strings.Contains(item, "..") {
 			// If item is a range (e.g., "1..5"), extract start and end values
