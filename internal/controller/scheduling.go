@@ -75,6 +75,9 @@ func NewSleepSchedule(startSleep, endSleep string, weekDays string, timezone str
 	if err != nil {
 		return nil, err
 	}
+	if end.Before(start) {
+		end = end.Add(24 * time.Hour)
+	}
 	now := time.Now().In(loc)
 	return &SleepSchedule{
 		now:        now,

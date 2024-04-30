@@ -5,7 +5,7 @@ metadata:
   name: sleep-at-weekend
 spec:
   startSleep: "18:00"
-  endSleep: "19:00"
+  endSleep: "07:00"
   weekdays: "*"
   timezone: "Africa/Tunis"
   includedObjects: 
