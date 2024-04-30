@@ -1,6 +1,6 @@
 
 # Image URL to use all building/pushing image targets
-IMG ?= europe-west1-docker.pkg.dev/automation-370217/kronos/kronos-core:latest
+IMG ?= kronosorg/kronos-core:v0.1.0
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.29.0
 

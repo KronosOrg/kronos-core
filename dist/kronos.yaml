@@ -495,7 +495,7 @@ spec:
         - --leader-elect
         command:
         - /manager
-        image: europe-west1-docker.pkg.dev/automation-370217/kronos/kronos-core:latest
+        image: kronosorg/kronos-core:v0.1.0
         livenessProbe:
           httpGet:
             path: /healthz
