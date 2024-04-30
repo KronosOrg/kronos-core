@@ -5,7 +5,7 @@ IMG ?= kronosorg/kronos-core:v0.1.0
 ENVTEST_K8S_VERSION = 1.29.0
 
 CONTROLLER_GROUP = 
-CONTROLLER_VERSION = v1beta1
+CONTROLLER_VERSION = v1alpha1
 CUSTOM_RESSOURCE_NAME = kronosapp
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
