@@ -161,3 +161,12 @@ func getSecretDatas(secret *corev1.Secret, kind string) ([]object.ResourceInt, e
 	}
 	return resourceList, nil
 }
+
+func purgeSecretData(ctx context.Context, Client client.Client, secret *corev1.Secret) error {
+	secret.Data = nil
+	err := Client.Update(ctx, secret)
+	if err != nil {
+		return err
+	}
+	return nil
+}

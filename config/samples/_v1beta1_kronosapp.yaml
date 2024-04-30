@@ -5,12 +5,12 @@ metadata:
   name: sleep-at-weekend
 spec:
   startSleep: "18:00"
-  endSleep: "07:00"
+  endSleep: "20:40"
   weekdays: "*"
   timezone: "Africa/Tunis"
   includedObjects: 
     - apiVersion: "apps/v1"
-      kind: "Deployment"
+      kind: "*"
       namespace: "default"
       includeRef: ""
       excludeRef: ""

@@ -18,6 +18,7 @@ package kronosapp
 
 import (
 	"context"
+	// "fmt"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -127,6 +128,11 @@ func (r *KronosAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			err = WakeUpResources(ctx, r.Client, secret)
 			if err != nil {
 				l.Error(err, "Waking Up Resources")
+				return ctrl.Result{}, err
+			}
+			err = purgeSecretData(ctx, r.Client, secret)
+			if err != nil {
+				l.Error(err, "Purging Secret's Data")
 				return ctrl.Result{}, err
 			}
 		}

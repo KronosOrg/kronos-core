@@ -20,9 +20,16 @@ type ObjectList struct {
 
 func (objectList *ObjectList) GetObjectsNames() map[string][]string {
 	objectNames := make(map[string][]string)
-	objectNames["Deployments"] = object.GetDeploymentListNames(objectList.Deployments)
-	objectNames["StatefulSets"] = object.GetStatefulsetListNames(objectList.StatefulSets)
-	objectNames["CronJobs"] = object.GetCronjobListNames(objectList.CronJobs)
+	if objectList.Deployments != nil {
+		objectNames["Deployments"] = object.GetDeploymentListNames(objectList.Deployments)
+	}
+	if objectList.StatefulSets != nil {
+		objectNames["StatefulSets"] = object.GetStatefulsetListNames(objectList.StatefulSets)
+	}
+	if objectList.CronJobs != nil {
+		objectNames["CronJobs"] = object.GetCronjobListNames(objectList.CronJobs)
+	}
+
 	return objectNames
 }
 
@@ -30,9 +37,11 @@ func (objectList *ObjectList) GetObjectsCount() map[string]int {
 	objectCount := make(map[string]int)
 	if objectList.Deployments != nil {
 		objectCount["Deployments"] = len(objectList.Deployments.Items)
-	} else if objectList.StatefulSets != nil {
+	}
+	if objectList.StatefulSets != nil {
 		objectCount["StatefulSets"] = len(objectList.StatefulSets.Items)
-	} else if objectList.CronJobs != nil {
+	}
+	if objectList.CronJobs != nil {
 		objectCount["CronJobs"] = len(objectList.CronJobs.Items)
 	}
 	return objectCount
@@ -42,9 +51,11 @@ func (objectList *ObjectList) GetObjectsTotalCount() int {
 	var count int
 	if objectList.Deployments != nil {
 		count += len(objectList.Deployments.Items)
-	} else if objectList.StatefulSets != nil {
+	}
+	if objectList.StatefulSets != nil {
 		count += len(objectList.StatefulSets.Items)
-	} else if objectList.CronJobs != nil {
+	}
+	if objectList.CronJobs != nil {
 		count += len(objectList.CronJobs.Items)
 	}
 	return count
