@@ -1,4 +1,4 @@
 ## Append samples of your project ##
 resources:
-- _v1beta1_kronosapp.yaml
+- _v1alpha1_kronosapp.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples
