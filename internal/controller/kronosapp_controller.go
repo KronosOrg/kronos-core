@@ -22,13 +22,13 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	"github.com/prometheus/client_golang/prometheus"
+	"gitlab.infra.wecraft.tn/wecraft/automation/ifra/kronos/api/v1alpha1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"github.com/prometheus/client_golang/prometheus"
-	"gitlab.infra.wecraft.tn/wecraft/automation/ifra/kronos/api/v1alpha1"
 )
 
 // KronosAppReconciler reconciles a KronosApp object
