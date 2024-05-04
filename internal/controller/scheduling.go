@@ -116,11 +116,11 @@ func extractWeekdays(weekdays string) Set {
 	if weekdays == "*" {
 		return weekdaysSet.getAllDays()
 	}
-	weekdaysList := strings.Split(weekdays, "-")
+	weekdaysList := strings.Split(weekdays, ",")
 	for _, item := range weekdaysList {
-		if strings.Contains(item, "..") {
-			// If item is a range (e.g., "1..5"), extract start and end values
-			parts := strings.Split(item, "..")
+		if strings.Contains(item, "-") {
+			// If item is a range (e.g., "1-5"), extract start and end values
+			parts := strings.Split(item, "-")
 			start, _ := strconv.Atoi(parts[0])
 			end, _ := strconv.Atoi(parts[1])
 
@@ -243,13 +243,18 @@ func IsTimeToSleep(schedule SleepSchedule, kronosapp *v1alpha1.KronosApp) (bool,
 		return false, 0, nil
 	}
 	// Check if today is one of the weekdays specified
+	isWeekdayIncluded := false
 	for _, weekday := range schedule.Weekdays {
 		if schedule.now.Weekday() == weekday {
+			isWeekdayIncluded = true
 			// Check if the current time is between start and end sleep times
 			if schedule.now.After(schedule.StartSleep) && schedule.now.Before(schedule.EndSleep) {
 				return true, 0, nil
 			}
 		}
+	}
+	if isWeekdayIncluded == false {
+		return true, 0, nil
 	}
 	return false, 0, nil
 }
