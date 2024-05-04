@@ -514,7 +514,11 @@ spec:
         - --leader-elect
         command:
         - /manager
+<<<<<<< HEAD
         image: kronosorg/kronos-core:v0.4.0
+=======
+        image: kronosorg/kronos-core:v0.3.0
+>>>>>>> 5189eac (added dist)
         livenessProbe:
           httpGet:
             path: /healthz
