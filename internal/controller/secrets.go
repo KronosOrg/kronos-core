@@ -13,6 +13,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// +kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;create;update;delete;watch
+
 func (r *KronosAppReconciler) getSecret(ctx context.Context, name, namespace string) (*corev1.Secret, error) {
 	secret := &corev1.Secret{}
 	err := r.Get(ctx, types.NamespacedName{Name: name, Namespace: namespace}, secret)

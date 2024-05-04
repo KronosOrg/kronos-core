@@ -12,6 +12,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+
+// +kubebuilder:rbac:groups=apps,resources=deployments;statefulsets,verbs=get;list;watch;update
+// +kubebuilder:rbac:groups=batch,resources=cronjobs,verbs=get;list;watch;update
+
+
 type ObjectList struct {
 	Deployments  *appsv1.DeploymentList
 	StatefulSets *appsv1.StatefulSetList

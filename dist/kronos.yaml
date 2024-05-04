@@ -289,6 +289,36 @@ metadata:
   name: kronos-manager-role
 rules:
 - apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  - statefulsets
+  verbs:
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
+  - batch
+  resources:
+  - cronjobs
+  verbs:
+  - get
+  - list
+  - update
+  - watch
+- apiGroups:
   - core.wecraft.tn
   resources:
   - kronosapps
@@ -495,7 +525,7 @@ spec:
         - --leader-elect
         command:
         - /manager
-        image: kronosorg/kronos-core:v0.1.0
+        image: kronosorg/kronos-core:v0.2.0
         livenessProbe:
           httpGet:
             path: /healthz
