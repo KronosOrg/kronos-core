@@ -602,6 +602,7 @@ metadata:
 spec:
   endpoints:
   - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+<<<<<<< HEAD
     metricRelabelings:
     - action: replace
       regex: (.*)
@@ -609,6 +610,8 @@ spec:
       sourceLabels:
       - __name__
       targetLabel: __name__
+=======
+>>>>>>> 37b5faf (added schedule info metrics)
     path: /metrics
     port: https
     scheme: https
