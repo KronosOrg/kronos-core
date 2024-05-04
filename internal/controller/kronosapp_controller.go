@@ -26,7 +26,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	"gitlab.infra.wecraft.tn/wecraft/automation/ifra/kronos/api/v1alpha1"
 )
 
@@ -54,8 +55,18 @@ func (r *KronosAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	kronosApp, err := r.getKronosApp(ctx, req)
 	if err != nil {
 		l.Error(err, "Unable to fetch KronosApp")
+		if apierrors.IsNotFound(err) {
+			scheduleInfo.Delete(prometheus.Labels{
+				"name":      req.Name,
+				"namespace": req.Namespace,
+			})
+		}
 		return ctrl.Result{}, err
 	}
+	scheduleInfo.With(prometheus.Labels{
+		"name":      req.Name,
+		"namespace": req.Namespace,
+	}).Set(0)
 	secretName := getSecretName(req.Name)
 	secret, err := r.getSecret(ctx, secretName, req.Namespace)
 	if err != nil {
