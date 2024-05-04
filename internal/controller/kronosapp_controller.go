@@ -53,6 +53,7 @@ type KronosAppReconciler struct {
 func (r *KronosAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	l := log.Log
 	kronosApp, err := r.getKronosApp(ctx, req)
+	MetricsInit()
 	if err != nil {
 		l.Error(err, "Unable to fetch KronosApp")
 		if apierrors.IsNotFound(err) {
@@ -63,6 +64,7 @@ func (r *KronosAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		}
 		return ctrl.Result{}, err
 	}
+
 	scheduleInfo.With(prometheus.Labels{
 		"name":      req.Name,
 		"namespace": req.Namespace,

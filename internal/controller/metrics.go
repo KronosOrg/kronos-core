@@ -1,6 +1,7 @@
 package kronosapp
 
 import (
+	"fmt"
 	"github.com/prometheus/client_golang/prometheus"
 	"sigs.k8s.io/controller-runtime/pkg/metrics"
 )
@@ -18,6 +19,7 @@ var (
 	)
 )
 
-func init() {
+func MetricsInit() {
+	fmt.Println("Registering Metric")
 	metrics.Registry.MustRegister(scheduleInfo)
 }
