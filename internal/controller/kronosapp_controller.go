@@ -34,7 +34,8 @@ import (
 // KronosAppReconciler reconciles a KronosApp object
 type KronosAppReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme  *runtime.Scheme
+	Metrics Metrics
 }
 
 //+kubebuilder:rbac:groups=core.wecraft.tn,resources=kronosapps,verbs=get;list;watch;create;update;patch;delete
@@ -53,11 +54,10 @@ type KronosAppReconciler struct {
 func (r *KronosAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	l := log.Log
 	kronosApp, err := r.getKronosApp(ctx, req)
-	MetricsInit()
 	if err != nil {
 		l.Error(err, "Unable to fetch KronosApp")
 		if apierrors.IsNotFound(err) {
-			scheduleInfo.Delete(prometheus.Labels{
+			r.Metrics.ScheduleInfo.Delete(prometheus.Labels{
 				"name":      req.Name,
 				"namespace": req.Namespace,
 			})
@@ -65,10 +65,6 @@ func (r *KronosAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		return ctrl.Result{}, err
 	}
 
-	scheduleInfo.With(prometheus.Labels{
-		"name":      req.Name,
-		"namespace": req.Namespace,
-	}).Set(0)
 	secretName := getSecretName(req.Name)
 	secret, err := r.getSecret(ctx, secretName, req.Namespace)
 	if err != nil {
@@ -130,6 +126,10 @@ func (r *KronosAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			logFailedObjects(failedObjects, l)
 			return ctrl.Result{}, nil
 		}
+		r.Metrics.ScheduleInfo.With(prometheus.Labels{
+			"name":      req.Name,
+			"namespace": req.Namespace,
+		}).Set(0)
 		return ctrl.Result{
 			RequeueAfter: requeueTime,
 		}, nil
@@ -149,6 +149,10 @@ func (r *KronosAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 				return ctrl.Result{}, err
 			}
 		}
+		r.Metrics.ScheduleInfo.With(prometheus.Labels{
+			"name":      req.Name,
+			"namespace": req.Namespace,
+		}).Set(1)
 		return ctrl.Result{
 			RequeueAfter: requeueTime,
 		}, nil
