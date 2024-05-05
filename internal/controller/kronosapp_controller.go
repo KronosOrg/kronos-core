@@ -106,6 +106,10 @@ func (r *KronosAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	l.Info("isTimeToSleep", "execute", ok, "error", err)
 	if ok {
+		r.Metrics.ScheduleInfo.With(prometheus.Labels{
+			"name":      req.Name,
+			"namespace": req.Namespace,
+		}).Set(0)
 		inclusive, err := ValidateIncludedObjects(kronosApp.Spec.IncludedObjects)
 		if err != nil {
 			l.Error(err, "Validating Included Objects")
@@ -126,14 +130,15 @@ func (r *KronosAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			logFailedObjects(failedObjects, l)
 			return ctrl.Result{}, nil
 		}
-		r.Metrics.ScheduleInfo.With(prometheus.Labels{
-			"name":      req.Name,
-			"namespace": req.Namespace,
-		}).Set(0)
+
 		return ctrl.Result{
 			RequeueAfter: requeueTime,
 		}, nil
 	} else {
+		r.Metrics.ScheduleInfo.With(prometheus.Labels{
+			"name":      req.Name,
+			"namespace": req.Namespace,
+		}).Set(1)
 		err := CheckIfSecretContainsData(secret)
 		if err != nil {
 			l.Error(err, "Restoring Replicas")
@@ -149,10 +154,7 @@ func (r *KronosAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 				return ctrl.Result{}, err
 			}
 		}
-		r.Metrics.ScheduleInfo.With(prometheus.Labels{
-			"name":      req.Name,
-			"namespace": req.Namespace,
-		}).Set(1)
+
 		return ctrl.Result{
 			RequeueAfter: requeueTime,
 		}, nil
