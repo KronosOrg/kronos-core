@@ -140,7 +140,7 @@ func getSecretDatas(secret *corev1.Secret, kind string) ([]object.ResourceInt, e
 	var resourceList []object.ResourceInt
 	var err error
 	switch kind {
-	case "Deployment", "StatefulSet":
+	case "Deployment", "StatefulSet", "ReplicaSet":
 		{
 			var jsonData = []object.ReplicaResource{}
 			if secret.Data[kind] != nil {
