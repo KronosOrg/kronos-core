@@ -23,8 +23,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
-	"gitlab.infra.wecraft.tn/wecraft/automation/ifra/kronos/test/utils"
+	"github.com/KronosOrg/kronos-core/test/utils"
 )
 
 const namespace = "kronos-system"

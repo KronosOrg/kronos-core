@@ -2,7 +2,7 @@ package kronosapp
 
 import (
 	"fmt"
-	"gitlab.infra.wecraft.tn/wecraft/automation/ifra/kronos/api/v1alpha1"
+	"github.com/KronosOrg/kronos-core/api/v1alpha1"
 	"sort"
 	"strconv"
 	"strings"

@@ -27,7 +27,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	corewecrafttnv1alpha1 "gitlab.infra.wecraft.tn/wecraft/automation/ifra/kronos/api/v1alpha1"
+	corewecrafttnv1alpha1 "github.com/KronosOrg/kronos-core/api/v1alpha1"
 )
 
 var _ = Describe("KronosApp Controller", func() {
