@@ -12,12 +12,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// +kubebuilder:rbac:groups=apps,resources=deployments;statefulsets,verbs=get;list;watch;update
+
+// +kubebuilder:rbac:groups=apps,resources=deployments;statefulsets;replicasets,verbs=get;list;watch;update
 // +kubebuilder:rbac:groups=batch,resources=cronjobs,verbs=get;list;watch;update
 
 type ObjectList struct {
 	Deployments  *appsv1.DeploymentList
 	StatefulSets *appsv1.StatefulSetList
+	ReplicaSets  *appsv1.ReplicaSetList
 	CronJobs     *batchv1.CronJobList
 }
 
@@ -32,7 +34,9 @@ func (objectList *ObjectList) GetObjectsNames() map[string][]string {
 	if objectList.CronJobs != nil {
 		objectNames["CronJobs"] = object.GetCronjobListNames(objectList.CronJobs)
 	}
-
+	if objectList.ReplicaSets != nil {
+		objectNames["ReplicaSets"] = object.GetReplicaSetListNames(objectList.ReplicaSets)
+	}
 	return objectNames
 }
 
@@ -47,6 +51,9 @@ func (objectList *ObjectList) GetObjectsCount() map[string]int {
 	if objectList.CronJobs != nil {
 		objectCount["CronJobs"] = len(objectList.CronJobs.Items)
 	}
+	if objectList.ReplicaSets != nil {
+		objectCount["ReplicaSets"] = len(objectList.ReplicaSets.Items)
+	}
 	return objectCount
 }
 
@@ -60,6 +67,9 @@ func (objectList *ObjectList) GetObjectsTotalCount() int {
 	}
 	if objectList.CronJobs != nil {
 		count += len(objectList.CronJobs.Items)
+	}
+	if objectList.ReplicaSets != nil {
+		count += len(objectList.ReplicaSets.Items)
 	}
 	return count
 }
@@ -114,7 +124,7 @@ func (m *APIVersionKindMap) KindExists(kind string) bool {
 
 func getSupportedObjectsApiVersionAndKind() *APIVersionKindMap {
 	kindToAPIVersion := NewAPIVersionKindMap(map[string][]string{
-		"apps/v1":  {"Deployment", "StatefulSet"},
+		"apps/v1":  {"Deployment", "StatefulSet", "ReplicaSet"},
 		"batch/v1": {"CronJob"},
 	})
 	return kindToAPIVersion
@@ -199,6 +209,13 @@ func FetchAndFilter(ctx context.Context, Client client.Client, objectList *Objec
 			if len(cronjobs.Items) > 0 {
 				objectList.CronJobs = cronjobs
 			}
+			replicasets, err := object.FetchReplicaSets(ctx, Client, includeRef, excludeRef, namespace)
+			if err != nil {
+				return err
+			}
+			if len(replicasets.Items) > 0 {
+				objectList.ReplicaSets = replicasets
+			}
 		}
 	case "apps/v1":
 		switch kind {
@@ -222,6 +239,16 @@ func FetchAndFilter(ctx context.Context, Client client.Client, objectList *Objec
 					objectList.StatefulSets = statefulsets
 				}
 			}
+		case "ReplicaSet":
+			{
+				replicasets, err := object.FetchReplicaSets(ctx, Client, includeRef, excludeRef, namespace)
+				if err != nil {
+					return err
+				}
+				if len(replicasets.Items) > 0 {
+					objectList.ReplicaSets = replicasets
+				}
+			}
 		case "*":
 			{
 				deployments, err := object.FetchDeployments(ctx, Client, includeRef, excludeRef, namespace)
@@ -237,6 +264,13 @@ func FetchAndFilter(ctx context.Context, Client client.Client, objectList *Objec
 				}
 				if len(statefulsets.Items) > 0 {
 					objectList.StatefulSets = statefulsets
+				}
+				replicasets, err := object.FetchReplicaSets(ctx, Client, includeRef, excludeRef, namespace)
+				if err != nil {
+					return err
+				}
+				if len(replicasets.Items) > 0 {
+					objectList.ReplicaSets = replicasets
 				}
 			}
 		}
@@ -454,7 +488,47 @@ func putIncludedObjectsToSleep(ctx context.Context, Client client.Client, secret
 			return nil, err
 		}
 	}
+	if includedObjects.ReplicaSets != nil {
+		var savedResources []object.ResourceInt
+		var sleptResourcesToSave []object.ResourceInt
+		dataExists := CheckIfSecretContainsDataOfKind(secret, "ReplicaSet")
+		if dataExists {
+			savedResources, err = getSecretDatas(secret, "ReplicaSet")
+			if err != nil {
+				return nil, err
+			}
+		}
+		for _, item := range includedObjects.ReplicaSets.Items {
+			objectExists := false
+			index := 0
+			if len(savedResources) != 0 {
+				index, objectExists = checkOccurenceInSavedData(savedResources, item.Name, item.Namespace)
+			}
 
+			if !objectExists {
+				replicaset := object.NewReplicaResource(item.Kind, item.Name, item.Namespace, *item.Spec.Replicas)
+				replicaset.AddToList(replicaResourceMap)
+				replicaset.PutToSleep(ctx, Client)
+			} else {
+				sleptResourcesToSave = append(sleptResourcesToSave, savedResources[index])
+				savedResources = removeElementFromArray(savedResources, index)
+			}
+		}
+
+		if len(savedResources) != 0 {
+			for _, resource := range savedResources {
+				resource.Wake(ctx, Client)
+			}
+		}
+
+		replicasetList := object.CastReplicaToGeneral(replicaResourceMap.Items["ReplicaSet"])
+		replicasetList = append(replicasetList, sleptResourcesToSave...)
+
+		err = WriteChanges(ctx, Client, secret, replicasetList, "ReplicaSet", failedObjects, failedObjectsSleepActions)
+		if err != nil {
+			return nil, err
+		}
+	}
 	return failedObjectsSleepActions, nil
 }
 

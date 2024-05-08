@@ -99,6 +99,11 @@ func (o ReplicaResource) UpdateClient(ctx context.Context, Client client.Client)
 		if err != nil {
 			return err
 		}
+	case "ReplicaSet":
+		resource, err = GetReplicaSet(ctx, Client, o)
+		if err != nil {
+			return err
+		}
 	}
 	err = Client.Update(ctx, resource)
 	if err != nil {
