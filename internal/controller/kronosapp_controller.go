@@ -22,18 +22,20 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	"github.com/prometheus/client_golang/prometheus"
+	"gitlab.infra.wecraft.tn/wecraft/automation/ifra/kronos/api/v1alpha1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-
-	"gitlab.infra.wecraft.tn/wecraft/automation/ifra/kronos/api/v1alpha1"
 )
 
 // KronosAppReconciler reconciles a KronosApp object
 type KronosAppReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme  *runtime.Scheme
+	Metrics Metrics
 }
 
 //+kubebuilder:rbac:groups=core.wecraft.tn,resources=kronosapps,verbs=get;list;watch;create;update;patch;delete
@@ -54,8 +56,15 @@ func (r *KronosAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	kronosApp, err := r.getKronosApp(ctx, req)
 	if err != nil {
 		l.Error(err, "Unable to fetch KronosApp")
+		if apierrors.IsNotFound(err) {
+			r.Metrics.ScheduleInfo.Delete(prometheus.Labels{
+				"name":      req.Name,
+				"namespace": req.Namespace,
+			})
+		}
 		return ctrl.Result{}, err
 	}
+
 	secretName := getSecretName(req.Name)
 	secret, err := r.getSecret(ctx, secretName, req.Namespace)
 	if err != nil {
@@ -97,6 +106,10 @@ func (r *KronosAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	l.Info("isTimeToSleep", "execute", ok, "error", err)
 	if ok {
+		r.Metrics.ScheduleInfo.With(prometheus.Labels{
+			"name":      req.Name,
+			"namespace": req.Namespace,
+		}).Set(0)
 		inclusive, err := ValidateIncludedObjects(kronosApp.Spec.IncludedObjects)
 		if err != nil {
 			l.Error(err, "Validating Included Objects")
@@ -117,10 +130,15 @@ func (r *KronosAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			logFailedObjects(failedObjects, l)
 			return ctrl.Result{}, nil
 		}
+
 		return ctrl.Result{
 			RequeueAfter: requeueTime,
 		}, nil
 	} else {
+		r.Metrics.ScheduleInfo.With(prometheus.Labels{
+			"name":      req.Name,
+			"namespace": req.Namespace,
+		}).Set(1)
 		err := CheckIfSecretContainsData(secret)
 		if err != nil {
 			l.Error(err, "Restoring Replicas")
@@ -136,6 +154,7 @@ func (r *KronosAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 				return ctrl.Result{}, err
 			}
 		}
+
 		return ctrl.Result{
 			RequeueAfter: requeueTime,
 		}, nil

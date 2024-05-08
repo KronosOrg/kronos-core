@@ -12,6 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+
 // +kubebuilder:rbac:groups=apps,resources=deployments;statefulsets;replicasets,verbs=get;list;watch;update
 // +kubebuilder:rbac:groups=batch,resources=cronjobs,verbs=get;list;watch;update
 
