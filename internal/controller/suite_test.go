@@ -32,7 +32,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	corewecrafttnv1alpha1 "gitlab.infra.wecraft.tn/wecraft/automation/ifra/kronos/api/v1alpha1"
+	corewecrafttnv1alpha1 "github.com/KronosOrg/kronos-core/api/v1alpha1"
 	//+kubebuilder:scaffold:imports
 )
 

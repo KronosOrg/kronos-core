@@ -25,9 +25,8 @@ import (
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
-	v1alpha1 "gitlab.infra.wecraft.tn/wecraft/automation/ifra/kronos/api/v1alpha1"
-	kronosapp "gitlab.infra.wecraft.tn/wecraft/automation/ifra/kronos/internal/controller"
-	kronosappController "gitlab.infra.wecraft.tn/wecraft/automation/ifra/kronos/internal/controller"
+	v1alpha1 "github.com/KronosOrg/kronos-core/api/v1alpha1"
+	kronosappController "github.com/KronosOrg/kronos-core/internal/controller"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -123,7 +122,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	additionalMetrics := kronosapp.RegisterMetrics("kronos").MustRegister(ctrlMetrics.Registry)
+	additionalMetrics := kronosappController.RegisterMetrics("kronos").MustRegister(ctrlMetrics.Registry)
 
 	if err = (&kronosappController.KronosAppReconciler{
 		Client:  mgr.GetClient(),
