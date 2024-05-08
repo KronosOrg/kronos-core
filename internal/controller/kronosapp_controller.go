@@ -22,12 +22,12 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	"gitlab.infra.wecraft.tn/wecraft/automation/ifra/kronos/api/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-
-	"gitlab.infra.wecraft.tn/wecraft/automation/ifra/kronos/api/v1alpha1"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 // KronosAppReconciler reconciles a KronosApp object
@@ -82,12 +82,12 @@ func (r *KronosAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		l.Error(err, "Creating Schedule")
 		return ctrl.Result{}, err
 	}
-	ok, additionRequeueDuration, err := IsTimeToSleep(*schedule, kronosApp)
+	isHoliday, ok, additionRequeueDuration, err := IsTimeToSleep(*schedule, kronosApp)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 	var requeueTime time.Duration
-	if additionRequeueDuration != 0 {
+	if isHoliday {
 		requeueTime = additionRequeueDuration
 		l.Info("System is in Holiday", "requeue time", formatDuration(requeueTime))
 	} else {
@@ -95,18 +95,23 @@ func (r *KronosAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		l.Info("Getting Requeue Time", "requeue time", formatDuration(requeueTime))
 	}
 
+	inclusive, err := ValidateIncludedObjects(kronosApp.Spec.IncludedObjects)
+	if err != nil {
+		l.Error(err, "Validating Included Objects")
+		return ctrl.Result{}, err
+	}
+	includedObjects, err := FetchIncludedObjects(ctx, r.Client, kronosApp.Spec.IncludedObjects, inclusive)
+	if err != nil {
+		l.Error(err, "Fetching Included Objects")
+		return ctrl.Result{}, err
+	}
+	err = kronosApp.SetKronosAppStatus(ctx, r.Client, ok, isHoliday, formatDuration(requeueTime), includedObjects.GetObjectsTotalCount())
+	if err != nil {
+		l.Error(err, "Updating KronosApp Status")
+		return ctrl.Result{}, err
+	}
 	l.Info("isTimeToSleep", "execute", ok, "error", err)
 	if ok {
-		inclusive, err := ValidateIncludedObjects(kronosApp.Spec.IncludedObjects)
-		if err != nil {
-			l.Error(err, "Validating Included Objects")
-			return ctrl.Result{}, err
-		}
-		includedObjects, err := FetchIncludedObjects(ctx, r.Client, kronosApp.Spec.IncludedObjects, inclusive)
-		if err != nil {
-			l.Error(err, "Fetching Included Objects")
-			return ctrl.Result{}, err
-		}
 		l.Info("Fetching Included Resources", "Total Resources", includedObjects.GetObjectsTotalCount(), "Included Resources", includedObjects.GetObjectsCount())
 		failedObjects, err := putIncludedObjectsToSleep(ctx, r.Client, secret, includedObjects)
 		if err != nil {
@@ -144,8 +149,10 @@ func (r *KronosAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *KronosAppReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	pred := predicate.GenerationChangedPredicate{}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.KronosApp{}).
+		WithEventFilter(pred).
 		Complete(r)
 }
 
