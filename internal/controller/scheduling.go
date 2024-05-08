@@ -231,16 +231,16 @@ func IsItHoliday(schedule SleepSchedule) (bool, time.Duration) {
 	return isHoliday, holidayDuration
 }
 
-func IsTimeToSleep(schedule SleepSchedule, kronosapp *v1alpha1.KronosApp) (bool, time.Duration, error) {
+func IsTimeToSleep(schedule SleepSchedule, kronosapp *v1alpha1.KronosApp) (bool, bool, time.Duration, error) {
 	ok, holidayDuration := IsItHoliday(schedule)
 	if ok {
-		return true, holidayDuration, nil
+		return true, true, holidayDuration, nil
 	}
 	if kronosapp.Spec.ForceSleep == true {
-		return true, 0, nil
+		return false, true, 0, nil
 	}
 	if kronosapp.Spec.ForceWake == true {
-		return false, 0, nil
+		return false, false, 0, nil
 	}
 	// Check if today is one of the weekdays specified
 	isWeekdayIncluded := false
@@ -249,14 +249,14 @@ func IsTimeToSleep(schedule SleepSchedule, kronosapp *v1alpha1.KronosApp) (bool,
 			isWeekdayIncluded = true
 			// Check if the current time is between start and end sleep times
 			if schedule.now.After(schedule.StartSleep) && schedule.now.Before(schedule.EndSleep) {
-				return true, 0, nil
+				return false, true, 0, nil
 			}
 		}
 	}
 	if isWeekdayIncluded == false {
-		return true, 0, nil
+		return false, true, 0, nil
 	}
-	return false, 0, nil
+	return false, false, 0, nil
 }
 
 func getRequeueTime(schedule SleepSchedule) time.Duration {

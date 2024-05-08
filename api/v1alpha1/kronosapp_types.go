@@ -17,7 +17,10 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"context"
+	
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type Holiday struct {
@@ -47,11 +50,19 @@ type KronosAppSpec struct {
 
 // KronosAppStatus defines the observed state of KronosApp
 type KronosAppStatus struct {
-	CreatedSecrets []string `json:"secretCreated"`
+	Status           string   `json:"status"`
+	Reason           string   `json:"reason"`
+	HandledResources int      `json:"handledResources"`
+	NextOperation    string   `json:"nextOperation"`
+	CreatedSecrets   []string `json:"secretCreated,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.status"
+// +kubebuilder:printcolumn:name="Reason",type="string",JSONPath=".status.reason"
+// +kubebuilder:printcolumn:name="Handled Resources",type="string",JSONPath=".status.handledResources"
+// +kubebuilder:printcolumn:name="Next Operation",type="string",JSONPath=".status.nextOperation"
 
 // KronosApp is the Schema for the kronosapps API
 type KronosApp struct {
@@ -69,6 +80,37 @@ type KronosAppList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []KronosApp `json:"items"`
+}
+
+func (k KronosApp) SetKronosAppStatus(ctx context.Context, Client client.Client, status, reason bool, nextOperation string, handledResources int) error {
+	kdc := k.DeepCopy()
+	newStatus := KronosAppStatus{}
+	if status {
+		newStatus.Status = "Asleep"
+		if kdc.Spec.ForceSleep {
+			newStatus.Reason = "ForceSleep"
+		} else if reason {
+			newStatus.Reason = "Holiday"
+		} else {
+			newStatus.Reason = "Scheduled"
+		}
+	} else {
+		newStatus.Status = "Awake"
+		if kdc.Spec.ForceWake {
+			newStatus.Reason = "ForceWake"
+		} else {
+			newStatus.Reason = "Scheduled"
+		}
+	}
+	newStatus.HandledResources = handledResources
+	newStatus.NextOperation = nextOperation
+	kdc.Status = newStatus
+	err := Client.Status().Update(ctx, kdc)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func init() {
