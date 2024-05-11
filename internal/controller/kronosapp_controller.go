@@ -21,16 +21,15 @@ import (
 	// "fmt"
 	"time"
 
+	"github.com/KronosOrg/kronos-core/api/v1alpha1"
 	"github.com/go-logr/logr"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/KronosOrg/kronos-core/api/v1alpha1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
-
 )
 
 // KronosAppReconciler reconciles a KronosApp object
@@ -116,7 +115,8 @@ func (r *KronosAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		l.Error(err, "Fetching Included Objects")
 		return ctrl.Result{}, err
 	}
-	err = kronosApp.SetKronosAppStatus(ctx, r.Client, ok, isHoliday, formatDuration(requeueTime), includedObjects.GetObjectsTotalCount())
+	newStatus := kronosApp.GetNewKronosAppStatus(ok, isHoliday, formatDuration(requeueTime), includedObjects.GetObjectsTotalCount())
+	err = kronosApp.SetNewKronosAppStatus(ctx, r.Client, newStatus)
 	if err != nil {
 		l.Error(err, "Updating KronosApp Status")
 		return ctrl.Result{}, err
@@ -124,8 +124,12 @@ func (r *KronosAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	l.Info("isTimeToSleep", "execute", ok, "error", err)
 	if ok {
 		r.Metrics.ScheduleInfo.With(prometheus.Labels{
-			"name":      req.Name,
-			"namespace": req.Namespace,
+			"name":              req.Name,
+			"namespace":         req.Namespace,
+			"status":            newStatus.Status,
+			"reason":            newStatus.Reason,
+			"handled_resources": newStatus.HandledResources,
+			"next_operation":    newStatus.NextOperation,
 		}).Set(0)
 		inclusive, err := ValidateIncludedObjects(kronosApp.Spec.IncludedObjects)
 		if err != nil {
@@ -153,8 +157,12 @@ func (r *KronosAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		}, nil
 	} else {
 		r.Metrics.ScheduleInfo.With(prometheus.Labels{
-			"name":      req.Name,
-			"namespace": req.Namespace,
+			"name":              req.Name,
+			"namespace":         req.Namespace,
+			"status":            newStatus.Status,
+			"reason":            newStatus.Reason,
+			"handled_resources": newStatus.HandledResources,
+			"next_operation":    newStatus.NextOperation,
 		}).Set(1)
 		err := CheckIfSecretContainsData(secret)
 		if err != nil {

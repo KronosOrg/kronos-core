@@ -107,7 +107,7 @@ spec:
             description: KronosAppStatus defines the observed state of KronosApp
             properties:
               handledResources:
-                type: integer
+                type: string
               nextOperation:
                 type: string
               reason:
