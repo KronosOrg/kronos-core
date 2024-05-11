@@ -18,7 +18,8 @@ package v1alpha1
 
 import (
 	"context"
-	
+	"strconv"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -52,7 +53,7 @@ type KronosAppSpec struct {
 type KronosAppStatus struct {
 	Status           string   `json:"status"`
 	Reason           string   `json:"reason"`
-	HandledResources int      `json:"handledResources"`
+	HandledResources string   `json:"handledResources"`
 	NextOperation    string   `json:"nextOperation"`
 	CreatedSecrets   []string `json:"secretCreated,omitempty"`
 }
@@ -82,12 +83,11 @@ type KronosAppList struct {
 	Items           []KronosApp `json:"items"`
 }
 
-func (k KronosApp) SetKronosAppStatus(ctx context.Context, Client client.Client, status, reason bool, nextOperation string, handledResources int) error {
-	kdc := k.DeepCopy()
+func (k KronosApp) GetNewKronosAppStatus(status, reason bool, nextOperation string, handledResources int) KronosAppStatus {
 	newStatus := KronosAppStatus{}
 	if status {
 		newStatus.Status = "Asleep"
-		if kdc.Spec.ForceSleep {
+		if k.Spec.ForceSleep {
 			newStatus.Reason = "ForceSleep"
 		} else if reason {
 			newStatus.Reason = "Holiday"
@@ -96,14 +96,19 @@ func (k KronosApp) SetKronosAppStatus(ctx context.Context, Client client.Client,
 		}
 	} else {
 		newStatus.Status = "Awake"
-		if kdc.Spec.ForceWake {
+		if k.Spec.ForceWake {
 			newStatus.Reason = "ForceWake"
 		} else {
 			newStatus.Reason = "Scheduled"
 		}
 	}
-	newStatus.HandledResources = handledResources
+	newStatus.HandledResources = strconv.Itoa(handledResources)
 	newStatus.NextOperation = nextOperation
+	return newStatus
+}
+
+func (k KronosApp) SetNewKronosAppStatus(ctx context.Context, Client client.Client, newStatus KronosAppStatus) error {
+	kdc := k.DeepCopy()
 	kdc.Status = newStatus
 	err := Client.Status().Update(ctx, kdc)
 	if err != nil {

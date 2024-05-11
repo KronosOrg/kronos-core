@@ -123,7 +123,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	additionalMetrics := kronosappController.RegisterMetrics("").MustRegister(ctrlMetrics.Registry)
+	additionalMetrics := kronosappController.RegisterMetrics().MustRegister(ctrlMetrics.Registry)
 
 	if err = (&kronosappController.KronosAppReconciler{
 		Client:  mgr.GetClient(),

@@ -9,13 +9,12 @@ type Metrics struct {
 	ScheduleInfo *prometheus.GaugeVec
 }
 
-func RegisterMetrics(prefix string) Metrics {
+func RegisterMetrics() Metrics {
 	sleepInfoMetrics := Metrics{
 		ScheduleInfo: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Namespace: prefix,
-			Name:      "schedule_info",
-			Help:      "Current schedule information",
-		}, []string{"name", "namespace"}),
+			Name: "schedule_info",
+			Help: "Current schedule information",
+		}, []string{"name", "namespace", "status", "reason", "handled_resources", "next_operation"}),
 	}
 	return sleepInfoMetrics
 }
