@@ -106,7 +106,7 @@ spec:
             description: KronosAppStatus defines the observed state of KronosApp
             properties:
               handledResources:
-                type: integer
+                type: string
               nextOperation:
                 type: string
               reason:
@@ -443,7 +443,7 @@ spec:
         - --leader-elect
         command:
         - /manager
-        image: kronosorg/kronos-core:v0.3.1
+        image: kronosorg/kronos-core:v0.4.0
         livenessProbe:
           httpGet:
             path: /healthz

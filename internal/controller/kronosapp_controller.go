@@ -115,7 +115,7 @@ func (r *KronosAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		l.Error(err, "Fetching Included Objects")
 		return ctrl.Result{}, err
 	}
-	newStatus := kronosApp.GetNewKronosAppStatus(ok, isHoliday, formatDuration(requeueTime), includedObjects.GetObjectsTotalCount())
+	newStatus := kronosApp.GetNewKronosAppStatus(ok, isHoliday, schedule.now.Add(requeueTime), includedObjects.GetObjectsTotalCount())
 	err = kronosApp.SetNewKronosAppStatus(ctx, r.Client, newStatus)
 	if err != nil {
 		l.Error(err, "Updating KronosApp Status")
