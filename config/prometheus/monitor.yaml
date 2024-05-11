@@ -20,6 +20,13 @@ spec:
       bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
       tlsConfig:
         insecureSkipVerify: true
+      metricRelabelings:
+        - action: replace
+          regex: (.*)
+          replacement: kronos_$1
+          sourceLabels:
+          - __name__
+          targetLabel: __name__
   selector:
     matchLabels:
       control-plane: controller-manager

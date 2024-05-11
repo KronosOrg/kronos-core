@@ -419,7 +419,7 @@ spec:
         - --leader-elect
         command:
         - /manager
-        image: kronosorg/kronos-core:v0.3.0
+        image: kronosorg/kronos-core:v0.3.1
         livenessProbe:
           httpGet:
             path: /healthz
@@ -466,6 +466,13 @@ metadata:
 spec:
   endpoints:
   - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    metricRelabelings:
+    - action: replace
+      regex: (.*)
+      replacement: kronos_$1
+      sourceLabels:
+      - __name__
+      targetLabel: __name__
     path: /metrics
     port: https
     scheme: https
