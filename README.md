@@ -1,4 +1,5 @@
 [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/kronos-core)](https://artifacthub.io/packages/search?repo=kronos-core)
+[![Go Report Card](https://goreportcard.com/badge/github.com/KronosOrg/kronos-core)](https://goreportcard.com/report/github.com/KronosOrg/kronos-core)
 # kronos
 // TODO(user): Add simple overview of use/purpose
 
