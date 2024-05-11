@@ -19,6 +19,7 @@ package v1alpha1
 import (
 	"context"
 	"strconv"
+	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -83,7 +84,7 @@ type KronosAppList struct {
 	Items           []KronosApp `json:"items"`
 }
 
-func (k KronosApp) GetNewKronosAppStatus(status, reason bool, nextOperation string, handledResources int) KronosAppStatus {
+func (k KronosApp) GetNewKronosAppStatus(status, reason bool, nextOperation time.Time, handledResources int) KronosAppStatus {
 	newStatus := KronosAppStatus{}
 	if status {
 		newStatus.Status = "Asleep"
@@ -103,7 +104,7 @@ func (k KronosApp) GetNewKronosAppStatus(status, reason bool, nextOperation stri
 		}
 	}
 	newStatus.HandledResources = strconv.Itoa(handledResources)
-	newStatus.NextOperation = nextOperation
+	newStatus.NextOperation = nextOperation.String()
 	return newStatus
 }
 
