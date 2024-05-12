@@ -160,7 +160,7 @@ func (r *KronosApp) validateKronosApp() error {
 	}
 	err = r.validateScheduleTimezone()
 	if err != nil {
-		return err 
+		return err
 	}
 	err = r.validateScheduleWeekdays()
 	if err != nil {
