@@ -10,12 +10,6 @@ import (
 
 func getStatefulsetsByPattern(object Object, allObjects *appsv1.StatefulSetList) *appsv1.StatefulSetList {
 	filteredDeployments := &appsv1.StatefulSetList{}
-	if object.IncludeRef == "" {
-		object.IncludeRef = ".*"
-	}
-	if object.ExcludeRef == "" {
-		object.ExcludeRef = "^$"
-	}
 	if object.IncludeRef == "" && object.ExcludeRef == "" {
 		return allObjects
 	}

@@ -10,12 +10,6 @@ import (
 
 func getReplicaSetsByPattern(object Object, allObjects *appsv1.ReplicaSetList) *appsv1.ReplicaSetList {
 	filteredReplicaSets := &appsv1.ReplicaSetList{}
-	if object.IncludeRef == "" {
-		object.IncludeRef = ".*"
-	}
-	if object.ExcludeRef == "" {
-		object.ExcludeRef = "^$"
-	}
 	if object.IncludeRef == "" && object.ExcludeRef == "" {
 		return allObjects
 	}

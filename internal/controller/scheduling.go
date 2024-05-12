@@ -18,8 +18,7 @@ type SleepSchedule struct {
 	Holidays   map[string][]time.Time
 }
 
-func getTime(literal string, location *time.Location) (time.Time, error) {
-	now := time.Now().In(location)
+func getTime(now time.Time, literal string, location *time.Location) (time.Time, error) {
 	targetTime, err := time.Parse("15:04", literal)
 	if err != nil {
 		return time.Time{}, err
@@ -67,15 +66,16 @@ func NewSleepSchedule(startSleep, endSleep string, weekDays string, timezone str
 	}
 	weekdaySet := extractWeekdays(weekDays)
 	weekdays := mapWeekdays(weekdaySet)
-	start, err := getTime(startSleep, loc)
-	if err != nil {
-		return nil, err
-	}
-	end, err := getTime(endSleep, loc)
-	if err != nil {
-		return nil, err
-	}
 	now := time.Now().In(loc)
+	start, err := getTime(now, startSleep, loc)
+	if err != nil {
+		return nil, err
+	}
+	end, err := getTime(now, endSleep, loc)
+	if err != nil {
+		return nil, err
+	}
+	
 	if end.Before(start) && now.After(end) {
 		end = end.Add(24 * time.Hour)
 	}
