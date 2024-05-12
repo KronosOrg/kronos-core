@@ -123,14 +123,7 @@ func (r *KronosAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	}
 	l.Info("isTimeToSleep", "execute", ok, "error", err)
 	if ok {
-		r.Metrics.ScheduleInfo.With(prometheus.Labels{
-			"name":              req.Name,
-			"namespace":         req.Namespace,
-			"status":            newStatus.Status,
-			"reason":            newStatus.Reason,
-			"handled_resources": newStatus.HandledResources,
-			"next_operation":    newStatus.NextOperation,
-		}).Set(0)
+		r.exportAdditionalMetrics(req, newStatus, 0)
 		inclusive, err := ValidateIncludedObjects(kronosApp.Spec.IncludedObjects)
 		if err != nil {
 			l.Error(err, "Validating Included Objects")
@@ -156,14 +149,7 @@ func (r *KronosAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			RequeueAfter: requeueTime,
 		}, nil
 	} else {
-		r.Metrics.ScheduleInfo.With(prometheus.Labels{
-			"name":              req.Name,
-			"namespace":         req.Namespace,
-			"status":            newStatus.Status,
-			"reason":            newStatus.Reason,
-			"handled_resources": newStatus.HandledResources,
-			"next_operation":    newStatus.NextOperation,
-		}).Set(1)
+		r.exportAdditionalMetrics(req, newStatus, 1)
 		err := CheckIfSecretContainsData(secret)
 		if err != nil {
 			l.Error(err, "Restoring Replicas")
@@ -202,6 +188,21 @@ func (r *KronosAppReconciler) getKronosApp(ctx context.Context, req ctrl.Request
 		return nil, err
 	}
 	return kronosApp, nil
+}
+
+func (r *KronosAppReconciler) exportAdditionalMetrics(req ctrl.Request, newStatus v1alpha1.KronosAppStatus, value float64) {
+	r.Metrics.InDepthScheduleInfo.With(prometheus.Labels{
+		"name":              req.Name,
+		"namespace":         req.Namespace,
+		"status":            newStatus.Status,
+		"reason":            newStatus.Reason,
+		"handled_resources": newStatus.HandledResources,
+		"next_operation":    newStatus.NextOperation,
+	}).Set(value)
+	r.Metrics.ScheduleInfo.With(prometheus.Labels{
+		"name":      req.Name,
+		"namespace": req.Namespace,
+	}).Set(value)
 }
 
 func logFailedObjects(failedObjects map[string][]string, l logr.Logger) {
