@@ -17,7 +17,12 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"context"
+	"strconv"
+	"time"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type Holiday struct {
@@ -47,11 +52,19 @@ type KronosAppSpec struct {
 
 // KronosAppStatus defines the observed state of KronosApp
 type KronosAppStatus struct {
-	CreatedSecrets []string `json:"secretCreated"`
+	Status           string   `json:"status"`
+	Reason           string   `json:"reason"`
+	HandledResources string   `json:"handledResources"`
+	NextOperation    string   `json:"nextOperation"`
+	CreatedSecrets   []string `json:"secretCreated,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.status"
+// +kubebuilder:printcolumn:name="Reason",type="string",JSONPath=".status.reason"
+// +kubebuilder:printcolumn:name="Handled Resources",type="string",JSONPath=".status.handledResources"
+// +kubebuilder:printcolumn:name="Next Operation",type="string",JSONPath=".status.nextOperation"
 
 // KronosApp is the Schema for the kronosapps API
 type KronosApp struct {
@@ -69,6 +82,41 @@ type KronosAppList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []KronosApp `json:"items"`
+}
+
+func (k KronosApp) GetNewKronosAppStatus(status, reason bool, nextOperation time.Time, handledResources int) KronosAppStatus {
+	newStatus := KronosAppStatus{}
+	if status {
+		newStatus.Status = "Asleep"
+		if k.Spec.ForceSleep {
+			newStatus.Reason = "ForceSleep"
+		} else if reason {
+			newStatus.Reason = "Holiday"
+		} else {
+			newStatus.Reason = "Scheduled"
+		}
+	} else {
+		newStatus.Status = "Awake"
+		if k.Spec.ForceWake {
+			newStatus.Reason = "ForceWake"
+		} else {
+			newStatus.Reason = "Scheduled"
+		}
+	}
+	newStatus.HandledResources = strconv.Itoa(handledResources)
+	newStatus.NextOperation = nextOperation.String()
+	return newStatus
+}
+
+func (k KronosApp) SetNewKronosAppStatus(ctx context.Context, Client client.Client, newStatus KronosAppStatus) error {
+	kdc := k.DeepCopy()
+	kdc.Status = newStatus
+	err := Client.Status().Update(ctx, kdc)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func init() {

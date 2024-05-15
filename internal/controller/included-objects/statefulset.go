@@ -2,20 +2,15 @@ package object
 
 import (
 	"context"
+	"regexp"
+
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"regexp"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func getStatefulsetsByPattern(object Object, allObjects *appsv1.StatefulSetList) *appsv1.StatefulSetList {
 	filteredDeployments := &appsv1.StatefulSetList{}
-	if object.IncludeRef == "" {
-		object.IncludeRef = ".*"
-	}
-	if object.ExcludeRef == "" {
-		object.ExcludeRef = "^$"
-	}
 	if object.IncludeRef == "" && object.ExcludeRef == "" {
 		return allObjects
 	}

@@ -2,20 +2,15 @@ package object
 
 import (
 	"context"
+	"regexp"
+
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"regexp"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func getCronjobsByPattern(object Object, allObjects *batchv1.CronJobList) *batchv1.CronJobList {
 	filteredCronjobs := &batchv1.CronJobList{}
-	if object.IncludeRef == "" {
-		object.IncludeRef = ".*"
-	}
-	if object.ExcludeRef == "" {
-		object.ExcludeRef = "^$"
-	}
 	if object.IncludeRef == "" && object.ExcludeRef == "" {
 		return allObjects
 	}

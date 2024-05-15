@@ -25,8 +25,6 @@ import (
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
-	v1alpha1 "github.com/KronosOrg/kronos-core/api/v1alpha1"
-	kronosappController "github.com/KronosOrg/kronos-core/internal/controller"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -36,6 +34,9 @@ import (
 	ctrlMetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+
+	v1alpha1 "github.com/KronosOrg/kronos-core/api/v1alpha1"
+	kronosappController "github.com/KronosOrg/kronos-core/internal/controller"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -122,7 +123,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	additionalMetrics := kronosappController.RegisterMetrics("").MustRegister(ctrlMetrics.Registry)
+	additionalMetrics := kronosappController.RegisterMetrics().MustRegister(ctrlMetrics.Registry)
 
 	if err = (&kronosappController.KronosAppReconciler{
 		Client:  mgr.GetClient(),
@@ -131,6 +132,12 @@ func main() {
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "KronosApp")
 		os.Exit(1)
+	}
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		if err = (&v1alpha1.KronosApp{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "KronosApp")
+			os.Exit(1)
+		}
 	}
 	//+kubebuilder:scaffold:builder
 

@@ -2,8 +2,8 @@ package kronosapp
 
 import (
 	"context"
-	"errors"
 	"fmt"
+
 	"github.com/KronosOrg/kronos-core/api/v1alpha1"
 	object "github.com/KronosOrg/kronos-core/internal/controller/included-objects"
 	appsv1 "k8s.io/api/apps/v1"
@@ -11,7 +11,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
-
 
 // +kubebuilder:rbac:groups=apps,resources=deployments;statefulsets;replicasets,verbs=get;list;watch;update
 // +kubebuilder:rbac:groups=batch,resources=cronjobs,verbs=get;list;watch;update
@@ -147,7 +146,7 @@ func validateIncludedObject(includedObject v1alpha1.IncludedObject, supportedObj
 		isApiVersionInclusive = false
 		extractedKind = supportedObjectsApiVersion.GetKind(includedObject.ApiVersion)
 		if len(extractedKind) == 0 {
-			err := errors.New(fmt.Sprintf("Specified ApiVersion: %s is not supported!", includedObject.ApiVersion))
+			err := fmt.Errorf("specified ApiVersion: %s is not supported", includedObject.ApiVersion)
 			return false, false, err
 		}
 	}
@@ -156,12 +155,12 @@ func validateIncludedObject(includedObject v1alpha1.IncludedObject, supportedObj
 		if isApiVersionInclusive {
 			found := supportedObjectsApiVersion.KindExists(includedObject.Kind)
 			if !found {
-				err := errors.New(fmt.Sprintf("Specified Kind: %s is not supported!", includedObject.Kind))
+				err := fmt.Errorf("specified Kind: %s is not supported", includedObject.Kind)
 				return false, false, err
 			}
 		} else {
 			if !IsInArray(extractedKind, includedObject.Kind) {
-				err := errors.New(fmt.Sprintf("Specified Kind: %s is not supported or do not correspond with ApiVersion: %s !", includedObject.Kind, includedObject.ApiVersion))
+				err := fmt.Errorf("specified Kind: %s is not supported or do not correspond with ApiVersion: %s ", includedObject.Kind, includedObject.ApiVersion)
 				return false, false, err
 			}
 		}
@@ -171,8 +170,7 @@ func validateIncludedObject(includedObject v1alpha1.IncludedObject, supportedObj
 
 func ValidateIncludedObjects(includedObjects []v1alpha1.IncludedObject) (map[int][]bool, error) {
 	supportedObjectsApiVersionAndKind := getSupportedObjectsApiVersionAndKind()
-	var inclusive map[int][]bool
-	inclusive = make(map[int][]bool)
+	var inclusive = make(map[int][]bool)
 	for index, includedObject := range includedObjects {
 		isApiVersionInclusive, isKindInclusive, err := validateIncludedObject(includedObject, supportedObjectsApiVersionAndKind)
 		if err != nil {
@@ -288,8 +286,7 @@ func FetchAndFilter(ctx context.Context, Client client.Client, objectList *Objec
 }
 
 func FetchIncludedObjects(ctx context.Context, Client client.Client, includedObjects []v1alpha1.IncludedObject, inclusive map[int][]bool) (ObjectList, error) {
-	var objectList ObjectList
-	objectList = ObjectList{}
+	var objectList = ObjectList{}
 	var err error
 
 	for index, includedObject := range includedObjects {
@@ -357,14 +354,13 @@ func removeElementFromArray(arr []object.ResourceInt, index int) []object.Resour
 
 func putIncludedObjectsToSleep(ctx context.Context, Client client.Client, secret *corev1.Secret, includedObjects ObjectList) (map[string][]string, error) {
 	failedObjectsSleepActions := make(map[string][]string)
-	failedObjects := []string{}
 	replicaResourceMap := object.NewReplicaResourceMap()
 	statusResourceMap := object.NewStatusResourceMap()
-
 	var err error
 	if includedObjects.Deployments != nil {
 		var savedResources []object.ResourceInt
 		var sleptResourcesToSave []object.ResourceInt
+		var failedObjects []string
 		dataExists := CheckIfSecretContainsDataOfKind(secret, "Deployment")
 		if dataExists {
 			savedResources, err = getSecretDatas(secret, "Deployment")
@@ -382,7 +378,7 @@ func putIncludedObjectsToSleep(ctx context.Context, Client client.Client, secret
 			if !objectExists {
 				deployment := object.NewReplicaResource(item.Kind, item.Name, item.Namespace, *item.Spec.Replicas)
 				deployment.AddToList(replicaResourceMap)
-				deployment.PutToSleep(ctx, Client)
+				failedObjects = deployment.PutToSleep(ctx, Client)
 			} else {
 				sleptResourcesToSave = append(sleptResourcesToSave, savedResources[index])
 				savedResources = removeElementFromArray(savedResources, index)
@@ -391,7 +387,10 @@ func putIncludedObjectsToSleep(ctx context.Context, Client client.Client, secret
 
 		if len(savedResources) != 0 {
 			for _, resource := range savedResources {
-				resource.Wake(ctx, Client)
+				err := resource.Wake(ctx, Client)
+				if err != nil {
+					return nil, err
+				}
 			}
 		}
 
@@ -407,7 +406,7 @@ func putIncludedObjectsToSleep(ctx context.Context, Client client.Client, secret
 	if includedObjects.StatefulSets != nil {
 		savedResources := []object.ResourceInt{}
 		sleptResourcesToSave := []object.ResourceInt{}
-
+		var failedObjects []string
 		dataExists := CheckIfSecretContainsDataOfKind(secret, "StatefulSet")
 		if dataExists {
 			savedResources, err = getSecretDatas(secret, "StatefulSet")
@@ -426,7 +425,7 @@ func putIncludedObjectsToSleep(ctx context.Context, Client client.Client, secret
 			if !objectExists {
 				statefulset := object.NewReplicaResource(item.Kind, item.Name, item.Namespace, *item.Spec.Replicas)
 				statefulset.AddToList(replicaResourceMap)
-				statefulset.PutToSleep(ctx, Client)
+				failedObjects = statefulset.PutToSleep(ctx, Client)
 			} else {
 				sleptResourcesToSave = append(sleptResourcesToSave, savedResources[index])
 				savedResources = removeElementFromArray(savedResources, index)
@@ -434,7 +433,10 @@ func putIncludedObjectsToSleep(ctx context.Context, Client client.Client, secret
 		}
 		if len(savedResources) != 0 {
 			for _, resource := range savedResources {
-				resource.Wake(ctx, Client)
+				err := resource.Wake(ctx, Client)
+				if err != nil {
+					return nil, err
+				}
 			}
 		}
 
@@ -450,7 +452,7 @@ func putIncludedObjectsToSleep(ctx context.Context, Client client.Client, secret
 	if includedObjects.CronJobs != nil {
 		savedResources := []object.ResourceInt{}
 		sleptResourcesToSave := []object.ResourceInt{}
-
+		var failedObjects []string
 		dataExists := CheckIfSecretContainsDataOfKind(secret, "CronJob")
 		if dataExists {
 			savedResources, err = getSecretDatas(secret, "CronJob")
@@ -468,7 +470,7 @@ func putIncludedObjectsToSleep(ctx context.Context, Client client.Client, secret
 			if !objectExists {
 				cronjob := object.NewStatusResource(item.Kind, item.Name, item.Namespace, *item.Spec.Suspend)
 				cronjob.AddToList(statusResourceMap)
-				cronjob.PutToSleep(ctx, Client)
+				failedObjects = cronjob.PutToSleep(ctx, Client)
 			} else {
 				sleptResourcesToSave = append(sleptResourcesToSave, savedResources[index])
 				savedResources = removeElementFromArray(savedResources, index)
@@ -476,7 +478,10 @@ func putIncludedObjectsToSleep(ctx context.Context, Client client.Client, secret
 		}
 		if len(savedResources) != 0 {
 			for _, resource := range savedResources {
-				resource.Wake(ctx, Client)
+				err := resource.Wake(ctx, Client)
+				if err != nil {
+					return nil, err
+				}
 			}
 		}
 
@@ -491,6 +496,7 @@ func putIncludedObjectsToSleep(ctx context.Context, Client client.Client, secret
 	if includedObjects.ReplicaSets != nil {
 		var savedResources []object.ResourceInt
 		var sleptResourcesToSave []object.ResourceInt
+		var failedObjects []string
 		dataExists := CheckIfSecretContainsDataOfKind(secret, "ReplicaSet")
 		if dataExists {
 			savedResources, err = getSecretDatas(secret, "ReplicaSet")
@@ -508,7 +514,7 @@ func putIncludedObjectsToSleep(ctx context.Context, Client client.Client, secret
 			if !objectExists {
 				replicaset := object.NewReplicaResource(item.Kind, item.Name, item.Namespace, *item.Spec.Replicas)
 				replicaset.AddToList(replicaResourceMap)
-				replicaset.PutToSleep(ctx, Client)
+				failedObjects = replicaset.PutToSleep(ctx, Client)
 			} else {
 				sleptResourcesToSave = append(sleptResourcesToSave, savedResources[index])
 				savedResources = removeElementFromArray(savedResources, index)
@@ -517,7 +523,10 @@ func putIncludedObjectsToSleep(ctx context.Context, Client client.Client, secret
 
 		if len(savedResources) != 0 {
 			for _, resource := range savedResources {
-				resource.Wake(ctx, Client)
+				err := resource.Wake(ctx, Client)
+				if err != nil {
+					return nil, err
+				}
 			}
 		}
 
@@ -554,6 +563,9 @@ func WakeUpResources(ctx context.Context, Client client.Client, secret *corev1.S
 
 	for _, resource := range resourceList {
 		err = resource.Wake(ctx, Client)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }

@@ -2,6 +2,7 @@ package object
 
 import (
 	"context"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -22,7 +23,7 @@ func NewObject(Client client.Client, includeRef, excludeRef, namespace string) O
 }
 
 type ResourceInt interface {
-	PutToSleep(ctx context.Context, Client client.Client)
+	PutToSleep(ctx context.Context, Client client.Client) []string
 	UpdateClient(ctx context.Context, Client client.Client) error
 	Wake(ctx context.Context, Client client.Client) error
 	GetName() string
@@ -130,9 +131,9 @@ func (o ReplicaResource) AddToList(replicasMap ReplicaResourceMap) {
 	replicasMap.Items[o.ResourceKind] = append(replicasMap.Items[o.ResourceKind], o)
 }
 
-func (o ReplicaResource) PutToSleep(ctx context.Context, Client client.Client) {
+func (o ReplicaResource) PutToSleep(ctx context.Context, Client client.Client) []string {
+	var failedObjects []string
 	if o.ResourceReplicas != int32(0) {
-		failedObjects := []string{}
 		replicas, err := o.Sleep(ctx, Client)
 		if err != nil {
 			failedObjects = append(failedObjects, o.ResourceName)
@@ -140,6 +141,7 @@ func (o ReplicaResource) PutToSleep(ctx context.Context, Client client.Client) {
 			o.ResourceReplicas = replicas
 		}
 	}
+	return failedObjects
 }
 
 func (o ReplicaResource) Wake(ctx context.Context, Client client.Client) error {
@@ -227,9 +229,9 @@ func (o StatusResource) Sleep(ctx context.Context, Client client.Client) (*bool,
 	return &statusToStore, nil
 }
 
-func (o StatusResource) PutToSleep(ctx context.Context, Client client.Client) {
-	if *o.ResourceStatus != true {
-		failedObjects := []string{}
+func (o StatusResource) PutToSleep(ctx context.Context, Client client.Client) []string {
+	var failedObjects []string
+	if !*o.ResourceStatus {
 		status, err := o.Sleep(ctx, Client)
 		if err != nil {
 			failedObjects = append(failedObjects, o.ResourceName)
@@ -237,6 +239,7 @@ func (o StatusResource) PutToSleep(ctx context.Context, Client client.Client) {
 			o.ResourceStatus = status
 		}
 	}
+	return failedObjects
 }
 
 func (o StatusResource) AddToList(statusMap StatusResourceMap) {

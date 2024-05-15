@@ -2,20 +2,15 @@ package object
 
 import (
 	"context"
+	"regexp"
+
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"regexp"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func getDeploymentsByPattern(object Object, allObjects *appsv1.DeploymentList) *appsv1.DeploymentList {
 	filteredDeployments := &appsv1.DeploymentList{}
-	if object.IncludeRef == "" {
-		object.IncludeRef = ".*"
-	}
-	if object.ExcludeRef == "" {
-		object.ExcludeRef = "^$"
-	}
 	if object.IncludeRef == "" && object.ExcludeRef == "" {
 		return allObjects
 	}
