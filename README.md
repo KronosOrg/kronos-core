@@ -2,6 +2,7 @@
 ![Docker Pulls](https://img.shields.io/docker/pulls/kronosorg/kronos-core?style=flat-square&logo=docker)
 [![Go Report Card](https://goreportcard.com/badge/github.com/KronosOrg/kronos-core)](https://goreportcard.com/report/github.com/KronosOrg/kronos-core)
 [![Documentation](https://img.shields.io/badge/Documentation-KronosDocs-purple)](https://kronosorg.github.io/kronos-docs/)
+[![Grafana](https://img.shields.io/badge/Grafana-KronosBoard-orange)](https://grafana.com/grafana/dashboards/21068-kronosboard/)
 
 # Kronos Kubernetes Operator
 
