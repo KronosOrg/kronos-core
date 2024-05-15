@@ -2,9 +2,10 @@ package object
 
 import (
 	"context"
+	"regexp"
+
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"regexp"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 

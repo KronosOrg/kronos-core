@@ -2,11 +2,12 @@ package kronosapp
 
 import (
 	"fmt"
-	"github.com/KronosOrg/kronos-core/api/v1alpha1"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/KronosOrg/kronos-core/api/v1alpha1"
 )
 
 type SleepSchedule struct {

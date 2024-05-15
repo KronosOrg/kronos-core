@@ -141,7 +141,7 @@ func (r *KronosApp) validateScheduleHolidays() error {
 	if len(r.Spec.Holidays) != 0 {
 		for _, holiday := range r.Spec.Holidays {
 			if !reg.MatchString(holiday.Date) {
-				return errors.New(fmt.Sprintf("Date of Holiday: %s is not properly formatted.", holiday.Name))
+				return fmt.Errorf("Date of Holiday: %s is not properly formatted.", holiday.Name)
 			}
 		}
 	}

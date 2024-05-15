@@ -3,6 +3,7 @@ package kronosapp
 import (
 	"context"
 	"fmt"
+
 	"github.com/KronosOrg/kronos-core/api/v1alpha1"
 	object "github.com/KronosOrg/kronos-core/internal/controller/included-objects"
 	appsv1 "k8s.io/api/apps/v1"
@@ -386,7 +387,10 @@ func putIncludedObjectsToSleep(ctx context.Context, Client client.Client, secret
 
 		if len(savedResources) != 0 {
 			for _, resource := range savedResources {
-				resource.Wake(ctx, Client)
+				err := resource.Wake(ctx, Client)
+				if err != nil {
+					return nil, err
+				}
 			}
 		}
 
@@ -429,7 +433,10 @@ func putIncludedObjectsToSleep(ctx context.Context, Client client.Client, secret
 		}
 		if len(savedResources) != 0 {
 			for _, resource := range savedResources {
-				resource.Wake(ctx, Client)
+				err := resource.Wake(ctx, Client)
+				if err != nil {
+					return nil, err
+				}
 			}
 		}
 
@@ -471,7 +478,10 @@ func putIncludedObjectsToSleep(ctx context.Context, Client client.Client, secret
 		}
 		if len(savedResources) != 0 {
 			for _, resource := range savedResources {
-				resource.Wake(ctx, Client)
+				err := resource.Wake(ctx, Client)
+				if err != nil {
+					return nil, err
+				}
 			}
 		}
 
@@ -513,7 +523,10 @@ func putIncludedObjectsToSleep(ctx context.Context, Client client.Client, secret
 
 		if len(savedResources) != 0 {
 			for _, resource := range savedResources {
-				resource.Wake(ctx, Client)
+				err := resource.Wake(ctx, Client)
+				if err != nil {
+					return nil, err
+				}
 			}
 		}
 
