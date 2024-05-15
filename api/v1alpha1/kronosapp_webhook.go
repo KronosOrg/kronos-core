@@ -39,7 +39,6 @@ func (r *KronosApp) SetupWebhookWithManager(mgr ctrl.Manager) error {
 		Complete()
 }
 
-
 //+kubebuilder:webhook:path=/mutate-core-wecraft-tn-v1alpha1-kronosapp,mutating=true,failurePolicy=fail,sideEffects=None,groups=core.wecraft.tn,resources=kronosapps,verbs=create;update,versions=v1alpha1,name=mkronosapp.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Defaulter = &KronosApp{}

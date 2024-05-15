@@ -6,7 +6,7 @@ import (
 )
 
 type Metrics struct {
-	ScheduleInfo *prometheus.GaugeVec
+	ScheduleInfo        *prometheus.GaugeVec
 	InDepthScheduleInfo *prometheus.GaugeVec
 }
 
