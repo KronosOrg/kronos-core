@@ -5,4 +5,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: kronosorg/kronos-core
-  newTag: v0.3.1
+  newTag: v0.4.0

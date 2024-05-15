@@ -10,12 +10,6 @@ import (
 
 func getCronjobsByPattern(object Object, allObjects *batchv1.CronJobList) *batchv1.CronJobList {
 	filteredCronjobs := &batchv1.CronJobList{}
-	if object.IncludeRef == "" {
-		object.IncludeRef = ".*"
-	}
-	if object.ExcludeRef == "" {
-		object.ExcludeRef = "^$"
-	}
 	if object.IncludeRef == "" && object.ExcludeRef == "" {
 		return allObjects
 	}

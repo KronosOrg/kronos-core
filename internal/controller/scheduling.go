@@ -18,8 +18,7 @@ type SleepSchedule struct {
 	Holidays   map[string][]time.Time
 }
 
-func getTime(literal string, location *time.Location) (time.Time, error) {
-	now := time.Now().In(location)
+func getTime(now time.Time, literal string, location *time.Location) (time.Time, error) {
 	targetTime, err := time.Parse("15:04", literal)
 	if err != nil {
 		return time.Time{}, err
@@ -67,15 +66,16 @@ func NewSleepSchedule(startSleep, endSleep string, weekDays string, timezone str
 	}
 	weekdaySet := extractWeekdays(weekDays)
 	weekdays := mapWeekdays(weekdaySet)
-	start, err := getTime(startSleep, loc)
-	if err != nil {
-		return nil, err
-	}
-	end, err := getTime(endSleep, loc)
-	if err != nil {
-		return nil, err
-	}
 	now := time.Now().In(loc)
+	start, err := getTime(now, startSleep, loc)
+	if err != nil {
+		return nil, err
+	}
+	end, err := getTime(now, endSleep, loc)
+	if err != nil {
+		return nil, err
+	}
+	
 	if end.Before(start) && now.After(end) {
 		end = end.Add(24 * time.Hour)
 	}
@@ -229,10 +229,10 @@ func IsItHoliday(schedule SleepSchedule) (bool, time.Duration) {
 	return isHoliday, holidayDuration
 }
 
-func IsTimeToSleep(schedule SleepSchedule, kronosapp *v1alpha1.KronosApp) (bool, time.Duration, error) {
+func IsTimeToSleep(schedule SleepSchedule, kronosapp *v1alpha1.KronosApp) (bool, bool, time.Duration, error) {
 	ok, holidayDuration := IsItHoliday(schedule)
 	if ok {
-		return true, holidayDuration, nil
+		return true, true, holidayDuration, nil
 	}
 	if kronosapp.Spec.ForceSleep {
 		return true, 0, nil
@@ -247,14 +247,14 @@ func IsTimeToSleep(schedule SleepSchedule, kronosapp *v1alpha1.KronosApp) (bool,
 			isWeekdayIncluded = true
 			// Check if the current time is between start and end sleep times
 			if schedule.now.After(schedule.StartSleep) && schedule.now.Before(schedule.EndSleep) {
-				return true, 0, nil
+				return false, true, 0, nil
 			}
 		}
 	}
 	if !isWeekdayIncluded {
 		return true, 0, nil
 	}
-	return false, 0, nil
+	return false, false, 0, nil
 }
 
 func getRequeueTime(schedule SleepSchedule) time.Duration {

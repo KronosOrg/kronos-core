@@ -10,12 +10,6 @@ import (
 
 func getDeploymentsByPattern(object Object, allObjects *appsv1.DeploymentList) *appsv1.DeploymentList {
 	filteredDeployments := &appsv1.DeploymentList{}
-	if object.IncludeRef == "" {
-		object.IncludeRef = ".*"
-	}
-	if object.ExcludeRef == "" {
-		object.ExcludeRef = "^$"
-	}
 	if object.IncludeRef == "" && object.ExcludeRef == "" {
 		return allObjects
 	}

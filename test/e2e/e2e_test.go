@@ -21,9 +21,9 @@ import (
 	"os/exec"
 	"time"
 
+	"github.com/KronosOrg/kronos-core/test/utils"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/KronosOrg/kronos-core/test/utils"
 )
 
 const namespace = "kronos-system"
