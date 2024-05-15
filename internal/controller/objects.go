@@ -357,14 +357,13 @@ func removeElementFromArray(arr []object.ResourceInt, index int) []object.Resour
 
 func putIncludedObjectsToSleep(ctx context.Context, Client client.Client, secret *corev1.Secret, includedObjects ObjectList) (map[string][]string, error) {
 	failedObjectsSleepActions := make(map[string][]string)
-	failedObjects := []string{}
 	replicaResourceMap := object.NewReplicaResourceMap()
 	statusResourceMap := object.NewStatusResourceMap()
-
 	var err error
 	if includedObjects.Deployments != nil {
 		var savedResources []object.ResourceInt
 		var sleptResourcesToSave []object.ResourceInt
+		var failedObjects []string
 		dataExists := CheckIfSecretContainsDataOfKind(secret, "Deployment")
 		if dataExists {
 			savedResources, err = getSecretDatas(secret, "Deployment")
@@ -382,7 +381,7 @@ func putIncludedObjectsToSleep(ctx context.Context, Client client.Client, secret
 			if !objectExists {
 				deployment := object.NewReplicaResource(item.Kind, item.Name, item.Namespace, *item.Spec.Replicas)
 				deployment.AddToList(replicaResourceMap)
-				deployment.PutToSleep(ctx, Client)
+				failedObjects = deployment.PutToSleep(ctx, Client)
 			} else {
 				sleptResourcesToSave = append(sleptResourcesToSave, savedResources[index])
 				savedResources = removeElementFromArray(savedResources, index)
@@ -407,7 +406,7 @@ func putIncludedObjectsToSleep(ctx context.Context, Client client.Client, secret
 	if includedObjects.StatefulSets != nil {
 		savedResources := []object.ResourceInt{}
 		sleptResourcesToSave := []object.ResourceInt{}
-
+		var failedObjects []string
 		dataExists := CheckIfSecretContainsDataOfKind(secret, "StatefulSet")
 		if dataExists {
 			savedResources, err = getSecretDatas(secret, "StatefulSet")
@@ -426,7 +425,7 @@ func putIncludedObjectsToSleep(ctx context.Context, Client client.Client, secret
 			if !objectExists {
 				statefulset := object.NewReplicaResource(item.Kind, item.Name, item.Namespace, *item.Spec.Replicas)
 				statefulset.AddToList(replicaResourceMap)
-				statefulset.PutToSleep(ctx, Client)
+				failedObjects = statefulset.PutToSleep(ctx, Client)
 			} else {
 				sleptResourcesToSave = append(sleptResourcesToSave, savedResources[index])
 				savedResources = removeElementFromArray(savedResources, index)
@@ -450,7 +449,7 @@ func putIncludedObjectsToSleep(ctx context.Context, Client client.Client, secret
 	if includedObjects.CronJobs != nil {
 		savedResources := []object.ResourceInt{}
 		sleptResourcesToSave := []object.ResourceInt{}
-
+		var failedObjects []string
 		dataExists := CheckIfSecretContainsDataOfKind(secret, "CronJob")
 		if dataExists {
 			savedResources, err = getSecretDatas(secret, "CronJob")
@@ -468,7 +467,7 @@ func putIncludedObjectsToSleep(ctx context.Context, Client client.Client, secret
 			if !objectExists {
 				cronjob := object.NewStatusResource(item.Kind, item.Name, item.Namespace, *item.Spec.Suspend)
 				cronjob.AddToList(statusResourceMap)
-				cronjob.PutToSleep(ctx, Client)
+				failedObjects = cronjob.PutToSleep(ctx, Client)
 			} else {
 				sleptResourcesToSave = append(sleptResourcesToSave, savedResources[index])
 				savedResources = removeElementFromArray(savedResources, index)
@@ -491,6 +490,7 @@ func putIncludedObjectsToSleep(ctx context.Context, Client client.Client, secret
 	if includedObjects.ReplicaSets != nil {
 		var savedResources []object.ResourceInt
 		var sleptResourcesToSave []object.ResourceInt
+		var failedObjects []string
 		dataExists := CheckIfSecretContainsDataOfKind(secret, "ReplicaSet")
 		if dataExists {
 			savedResources, err = getSecretDatas(secret, "ReplicaSet")
@@ -508,7 +508,7 @@ func putIncludedObjectsToSleep(ctx context.Context, Client client.Client, secret
 			if !objectExists {
 				replicaset := object.NewReplicaResource(item.Kind, item.Name, item.Namespace, *item.Spec.Replicas)
 				replicaset.AddToList(replicaResourceMap)
-				replicaset.PutToSleep(ctx, Client)
+				failedObjects = replicaset.PutToSleep(ctx, Client)
 			} else {
 				sleptResourcesToSave = append(sleptResourcesToSave, savedResources[index])
 				savedResources = removeElementFromArray(savedResources, index)
