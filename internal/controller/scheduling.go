@@ -235,10 +235,10 @@ func IsTimeToSleep(schedule SleepSchedule, kronosapp *v1alpha1.KronosApp) (bool,
 		return true, true, holidayDuration, nil
 	}
 	if kronosapp.Spec.ForceSleep {
-		return true, 0, nil
+		return false, true, 0, nil
 	}
 	if kronosapp.Spec.ForceWake {
-		return false, 0, nil
+		return false, false, 0, nil
 	}
 	// Check if today is one of the weekdays specified
 	isWeekdayIncluded := false
@@ -252,7 +252,7 @@ func IsTimeToSleep(schedule SleepSchedule, kronosapp *v1alpha1.KronosApp) (bool,
 		}
 	}
 	if !isWeekdayIncluded {
-		return true, 0, nil
+		return false, true, 0, nil
 	}
 	return false, false, 0, nil
 }
