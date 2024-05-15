@@ -174,9 +174,7 @@ func removeRedundancy(sortedList []time.Time) []time.Time {
 func getAllHolidaysDates(schedule SleepSchedule) []time.Time {
 	var dateList []time.Time
 	for _, holidays := range schedule.Holidays {
-		for _, date := range holidays {
-			dateList = append(dateList, date)
-		}
+		dateList = append(dateList, holidays...)
 	}
 	sort.Slice(dateList, func(i, j int) bool {
 		return dateList[i].Before(dateList[j])
@@ -203,7 +201,7 @@ func checkConsecutiveDates(schedule SleepSchedule, dateList []time.Time, targetD
 		} else if date.After(targetDate) {
 			diff := date.Sub(targetDate)
 			if diff == 24*time.Hour {
-				requeueTime = checkConsecutiveDates(schedule, dateList[index+1:len(dateList)], date) + durationOffset
+				requeueTime = checkConsecutiveDates(schedule, dateList[index+1:], date) + durationOffset
 				return requeueTime + 24*time.Hour
 			}
 		}
@@ -236,10 +234,10 @@ func IsTimeToSleep(schedule SleepSchedule, kronosapp *v1alpha1.KronosApp) (bool,
 	if ok {
 		return true, holidayDuration, nil
 	}
-	if kronosapp.Spec.ForceSleep == true {
+	if kronosapp.Spec.ForceSleep {
 		return true, 0, nil
 	}
-	if kronosapp.Spec.ForceWake == true {
+	if kronosapp.Spec.ForceWake {
 		return false, 0, nil
 	}
 	// Check if today is one of the weekdays specified
@@ -253,7 +251,7 @@ func IsTimeToSleep(schedule SleepSchedule, kronosapp *v1alpha1.KronosApp) (bool,
 			}
 		}
 	}
-	if isWeekdayIncluded == false {
+	if !isWeekdayIncluded {
 		return true, 0, nil
 	}
 	return false, 0, nil

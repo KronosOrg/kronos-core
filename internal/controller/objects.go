@@ -2,7 +2,6 @@ package kronosapp
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/KronosOrg/kronos-core/api/v1alpha1"
 	object "github.com/KronosOrg/kronos-core/internal/controller/included-objects"
@@ -147,7 +146,7 @@ func validateIncludedObject(includedObject v1alpha1.IncludedObject, supportedObj
 		isApiVersionInclusive = false
 		extractedKind = supportedObjectsApiVersion.GetKind(includedObject.ApiVersion)
 		if len(extractedKind) == 0 {
-			err := errors.New(fmt.Sprintf("Specified ApiVersion: %s is not supported!", includedObject.ApiVersion))
+			err := fmt.Errorf("specified ApiVersion: %s is not supported", includedObject.ApiVersion)
 			return false, false, err
 		}
 	}
@@ -156,12 +155,12 @@ func validateIncludedObject(includedObject v1alpha1.IncludedObject, supportedObj
 		if isApiVersionInclusive {
 			found := supportedObjectsApiVersion.KindExists(includedObject.Kind)
 			if !found {
-				err := errors.New(fmt.Sprintf("Specified Kind: %s is not supported!", includedObject.Kind))
+				err := fmt.Errorf("specified Kind: %s is not supported", includedObject.Kind)
 				return false, false, err
 			}
 		} else {
 			if !IsInArray(extractedKind, includedObject.Kind) {
-				err := errors.New(fmt.Sprintf("Specified Kind: %s is not supported or do not correspond with ApiVersion: %s !", includedObject.Kind, includedObject.ApiVersion))
+				err := fmt.Errorf("specified Kind: %s is not supported or do not correspond with ApiVersion: %s ", includedObject.Kind, includedObject.ApiVersion)
 				return false, false, err
 			}
 		}
@@ -171,8 +170,7 @@ func validateIncludedObject(includedObject v1alpha1.IncludedObject, supportedObj
 
 func ValidateIncludedObjects(includedObjects []v1alpha1.IncludedObject) (map[int][]bool, error) {
 	supportedObjectsApiVersionAndKind := getSupportedObjectsApiVersionAndKind()
-	var inclusive map[int][]bool
-	inclusive = make(map[int][]bool)
+	var inclusive = make(map[int][]bool)
 	for index, includedObject := range includedObjects {
 		isApiVersionInclusive, isKindInclusive, err := validateIncludedObject(includedObject, supportedObjectsApiVersionAndKind)
 		if err != nil {
@@ -288,8 +286,7 @@ func FetchAndFilter(ctx context.Context, Client client.Client, objectList *Objec
 }
 
 func FetchIncludedObjects(ctx context.Context, Client client.Client, includedObjects []v1alpha1.IncludedObject, inclusive map[int][]bool) (ObjectList, error) {
-	var objectList ObjectList
-	objectList = ObjectList{}
+	var objectList = ObjectList{}
 	var err error
 
 	for index, includedObject := range includedObjects {
@@ -554,6 +551,9 @@ func WakeUpResources(ctx context.Context, Client client.Client, secret *corev1.S
 
 	for _, resource := range resourceList {
 		err = resource.Wake(ctx, Client)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
