@@ -137,13 +137,13 @@ func (r *KronosAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		}
 		l.Info("Fetching Included Resources", "Total Resources", includedObjects.GetObjectsTotalCount(), "Included Resources", includedObjects.GetObjectsCount())
 		failedObjects, err := putIncludedObjectsToSleep(ctx, r.Client, secret, includedObjects)
-		if err != nil {
-			l.Error(err, "Putting Included Objects To Sleep")
-			return ctrl.Result{}, err
-		}
 		if len(failedObjects) != 0 {
 			logFailedObjects(failedObjects, l)
 			return ctrl.Result{}, nil
+		}
+		if err != nil {
+			l.Error(err, "Putting Included Objects To Sleep")
+			return ctrl.Result{}, err
 		}
 
 		return ctrl.Result{
