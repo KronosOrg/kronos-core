@@ -3,12 +3,6 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    app.kubernetes.io/name: clusterrole
-    app.kubernetes.io/instance: kronosapp-viewer-role
-    app.kubernetes.io/component: rbac
-    app.kubernetes.io/created-by: Kronos-Core
-    app.kubernetes.io/part-of: Kronos-Core
-    app.kubernetes.io/managed-by: kustomize
   name: kronosapp-viewer-role
 rules:
 - apiGroups:
