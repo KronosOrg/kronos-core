@@ -401,7 +401,7 @@ spec:
         - --leader-elect
         command:
         - /manager
-        image: kronosorg/kronos-core:v0.4.0
+        image: kronosorg/kronos-core:v0.4.1
         livenessProbe:
           httpGet:
             path: /healthz
