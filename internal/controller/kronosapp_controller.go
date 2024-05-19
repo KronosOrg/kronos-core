@@ -116,15 +116,17 @@ func (r *KronosAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		l.Error(err, "Fetching Included Objects")
 		return ctrl.Result{}, err
 	}
+	currentStatus := kronosApp.Status
 	newStatus := kronosApp.GetNewKronosAppStatus(ok, isHoliday, schedule.now.Add(requeueTime), includedObjects.GetObjectsTotalCount())
 	err = kronosApp.SetNewKronosAppStatus(ctx, r.Client, newStatus)
 	if err != nil {
 		l.Error(err, "Updating KronosApp Status")
 		return ctrl.Result{}, err
 	}
+	r.deleteOldMetrics(req, currentStatus)
+	r.exportAdditionalMetrics(req, newStatus, ok)
 	l.Info("isTimeToSleep", "execute", ok, "error", err)
 	if ok {
-		r.exportAdditionalMetrics(req, newStatus, 0)
 		inclusive, err := ValidateIncludedObjects(kronosApp.Spec.IncludedObjects)
 		if err != nil {
 			l.Error(err, "Validating Included Objects")
@@ -150,7 +152,6 @@ func (r *KronosAppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 			RequeueAfter: requeueTime,
 		}, nil
 	} else {
-		r.exportAdditionalMetrics(req, newStatus, 1)
 		err := CheckIfSecretContainsData(secret)
 		if err != nil {
 			l.Error(err, "Restoring Replicas")
@@ -191,7 +192,13 @@ func (r *KronosAppReconciler) getKronosApp(ctx context.Context, req ctrl.Request
 	return kronosApp, nil
 }
 
-func (r *KronosAppReconciler) exportAdditionalMetrics(req ctrl.Request, newStatus v1alpha1.KronosAppStatus, value float64) {
+func (r *KronosAppReconciler) exportAdditionalMetrics(req ctrl.Request, newStatus v1alpha1.KronosAppStatus, isTimeToSleep bool) {
+	var value float64
+	if isTimeToSleep {
+		value = 0
+	} else {
+		value = 1
+	}
 	r.Metrics.InDepthScheduleInfo.With(prometheus.Labels{
 		"name":              req.Name,
 		"namespace":         req.Namespace,
@@ -204,6 +211,17 @@ func (r *KronosAppReconciler) exportAdditionalMetrics(req ctrl.Request, newStatu
 		"name":      req.Name,
 		"namespace": req.Namespace,
 	}).Set(value)
+}
+
+func (r *KronosAppReconciler) deleteOldMetrics(req ctrl.Request, oldStatus v1alpha1.KronosAppStatus) {
+	r.Metrics.InDepthScheduleInfo.Delete(prometheus.Labels{
+		"name":              req.Name,
+		"namespace":         req.Namespace,
+		"status":            oldStatus.Status,
+		"reason":            oldStatus.Reason,
+		"handled_resources": oldStatus.HandledResources,
+		"next_operation":    oldStatus.NextOperation,
+	})
 }
 
 func logFailedObjects(failedObjects map[string][]string, l logr.Logger) {
