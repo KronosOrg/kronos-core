@@ -11,7 +11,7 @@ type Metrics struct {
 }
 
 func RegisterMetrics() Metrics {
-	sleepInfoMetrics := Metrics{
+	scheduleInfoMetrics := Metrics{
 		ScheduleInfo: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Name: "schedule_info",
 			Help: "Current schedule information",
@@ -21,7 +21,7 @@ func RegisterMetrics() Metrics {
 			Help: "Current schedule information",
 		}, []string{"name", "namespace", "status", "reason", "handled_resources", "next_operation"}),
 	}
-	return sleepInfoMetrics
+	return scheduleInfoMetrics
 }
 
 func (additionalMetrics Metrics) MustRegister(registry metrics.RegistererGatherer) Metrics {
