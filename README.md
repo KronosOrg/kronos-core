@@ -44,7 +44,7 @@ This example schedules all deployments in the default namespace to sleep from 6 
 ### Kronos-Core(Operator)
 #### Using Release Files
 ```sh
-kubectl apply -f https://github.com/KronosOrg/kronos-core/releases/download/v0.3.1/kronos-core-0.3.1.yaml
+kubectl apply -f https://github.com/KronosOrg/kronos-core/releases/download/v0.4.1/kronos-core-0.4.1.yaml
 ```
 #### Using Helm
 1- Add the Helm repository:
